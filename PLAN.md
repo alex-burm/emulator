@@ -8,17 +8,17 @@
 ## Фаза 1 — Фундамент
 **Цель:** приложение запускается, БД подключается, базовая инфраструктура готова.
 
-- [ ] Установка зависимостей:
+- [x] Установка зависимостей:
   `@nestjs/typeorm`, `typeorm`, `mysql2`, `@nestjs/config`,
   `class-validator`, `class-transformer`, `@nestjs/cqrs`, `@nestjs/serve-static`
-- [ ] `.env` + `.env.example` (DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, APP_PORT)
-- [ ] `@nestjs/config` подключён в `AppModule` (isGlobal: true)
-- [ ] `typeorm.config.ts` в `shared/infrastructure/database/` (synchronize: false, путь к миграциям)
-- [ ] Скрипты в `package.json`: `migration:generate`, `migration:run`, `migration:revert`
-- [ ] Глобальный префикс `/api` в `main.ts`
-- [ ] `GlobalExceptionFilter` зарегистрирован глобально
-- [ ] `ResponseEnvelopeInterceptor` зарегистрирован глобально (оборачивает ответы в `{ data, meta }`)
-- [ ] Удалены дефолтные файлы стартера (`app.controller.ts`, `app.service.ts`, `app.controller.spec.ts`)
+- [x] `.env` + `.env.example` (DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, APP_PORT)
+- [x] `@nestjs/config` подключён в `AppModule` (isGlobal: true)
+- [x] `typeorm.config.ts` в `shared/infrastructure/database/` (synchronize: false, путь к миграциям)
+- [x] Скрипты в `package.json`: `migration:generate`, `migration:run`, `migration:revert`
+- [x] Глобальный префикс `/api` в `main.ts`
+- [x] `GlobalExceptionFilter` зарегистрирован глобально
+- [x] `ResponseEnvelopeInterceptor` зарегистрирован глобально (оборачивает ответы в `{ data, meta }`)
+- [x] Удалены дефолтные файлы стартера (`app.controller.ts`, `app.service.ts`, `app.controller.spec.ts`)
 
 **Проверка:** `npm run start:dev` стартует без ошибок, БД подключена, `GET /api` → 404.
 
@@ -27,16 +27,16 @@
 ## Фаза 2 — Схема БД
 **Цель:** все 4 таблицы созданы через миграцию, структура соответствует архитектуре.
 
-- [ ] ORM-энтити (в соответствующих BC, папка `infrastructure/persistence/`):
-  - [ ] `provider.orm-entity.ts`
-  - [ ] `provider-endpoint.orm-entity.ts`
-  - [ ] `project.orm-entity.ts`
-  - [ ] `endpoint-rule.orm-entity.ts`
-- [ ] Все энтити добавлены в `typeorm.config.ts` (entities: [...])
-- [ ] `npm run migration:generate -- src/migrations/InitSchema`
-- [ ] Проверить сгенерированный файл миграции
-- [ ] `npm run migration:run`
-- [ ] Проверить таблицы в БД (все 4 созданы с нужными колонками и индексами)
+- [x] ORM-энтити (в соответствующих BC, папка `domain/`):
+  - [x] `provider.entity.ts`
+  - [x] `provider-endpoint.entity.ts`
+  - [x] `project.entity.ts`
+  - [x] `endpoint-rule.entity.ts`
+- [x] Все энтити добавлены в `typeorm.config.ts` (entities: [...])
+- [x] `npm run migration:generate -- src/migrations/InitSchema`
+- [x] Проверить сгенерированный файл миграции
+- [x] `npm run migration:run`
+- [x] Проверить таблицы в БД (все 4 созданы с нужными колонками и индексами)
 
 **Проверка:** таблицы `providers`, `provider_endpoints`, `projects`, `endpoint_rules` существуют в БД.
 
@@ -45,23 +45,23 @@
 ## Фаза 3 — Catalog BC
 **Цель:** `GET /api/providers` возвращает ServiceTitan и Yelp с их эндпоинтами.
 
-- [ ] Domain:
-  - [ ] `provider.aggregate.ts`
-  - [ ] `provider-endpoint.entity.ts`
-  - [ ] `value-objects/auth-config.vo.ts`
-- [ ] Infrastructure:
-  - [ ] `provider.repository.ts`
-  - [ ] `seed/catalog-seed.service.ts` (через `OnModuleInit`, идемпотентно)
-  - [ ] `seed/servicetitan.seed.ts` (10 эндпоинтов с реальными дефолтными ответами)
-  - [ ] `seed/yelp.seed.ts` (5 эндпоинтов с реальными дефолтными ответами)
-- [ ] Application:
-  - [ ] `queries/list-providers.query.ts` + `handlers/list-providers.handler.ts`
-  - [ ] `queries/get-provider-with-endpoints.query.ts` + `handlers/get-provider-with-endpoints.handler.ts`
-- [ ] Interface:
-  - [ ] `catalog.controller.ts` (`GET /api/providers`, `GET /api/providers/:id/endpoints`)
-  - [ ] `dto/provider.response.dto.ts`
-  - [ ] `dto/provider-endpoint.response.dto.ts`
-- [ ] `catalog.module.ts` зарегистрирован в `AppModule`
+- [x] Domain:
+  - [x] `provider.entity.ts`
+  - [x] `provider-endpoint.entity.ts`
+  - [x] Используем единые entity в `domain` и TypeORM напрямую (без дублирования domain/persistence сущностей)
+- [x] Infrastructure:
+  - [x] `provider.repository.ts`
+  - [x] `seed/catalog-seed.service.ts` (через `OnModuleInit`, идемпотентно)
+  - [x] `seed/servicetitan.seed.ts` (10 эндпоинтов с реальными дефолтными ответами)
+  - [x] `seed/yelp.seed.ts` (5 эндпоинтов с реальными дефолтными ответами)
+- [x] Application:
+  - [x] `queries/list-providers.query.ts` + `handlers/list-providers.handler.ts`
+  - [x] `queries/get-provider-with-endpoints.query.ts` + `handlers/get-provider-with-endpoints.handler.ts`
+- [x] Interface:
+  - [x] `catalog.controller.ts` (`GET /api/providers`, `GET /api/providers/:id/endpoints`)
+  - [x] `dto/provider.response.dto.ts`
+  - [x] `dto/provider-endpoint.response.dto.ts`
+- [x] `catalog.module.ts` зарегистрирован в `AppModule`
 
 **Проверка:** `GET /api/providers` → список 2 провайдеров. `GET /api/providers/1/endpoints` → 10 эндпоинтов ST.
 
@@ -165,8 +165,8 @@
 Всегда от внутреннего к внешнему:
 
 ```
-domain (чистая логика) → infrastructure (БД) → application (use cases) → interface (HTTP)
+domain (чистая логика) → infrastructure (БД) → application (use cases) → presentation (HTTP)
 ```
 
 Domain-слой никогда не импортирует из infrastructure.
-ORM-энтити не попадают в domain или interface — только через репозитории.
+В проекте используется единая модель сущности: entity лежит в `domain` и используется TypeORM напрямую без дублирования в infrastructure.
