@@ -4,12 +4,12 @@ import { GlobalExceptionFilter } from './shared/presentation/filters/global-exce
 import { ResponseEnvelopeInterceptor } from './shared/presentation/interceptors/response-envelope.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
-  app.useGlobalFilters(new GlobalExceptionFilter());
-  app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
+    const app = await NestFactory.create(AppModule);
+    app.setGlobalPrefix('api');
+    app.useGlobalFilters(new GlobalExceptionFilter());
+    app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 
-  const port = Number(process.env.APP_PORT ?? 3000);
-  await app.listen(port);
+    const port = Number(process.env.APP_PORT ?? 3000);
+    await app.listen(port);
 }
 bootstrap();
