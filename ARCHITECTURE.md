@@ -1,21 +1,21 @@
 # API Emulator — Architecture Knowledge Base
 
-> Статус: частично реализована  
-> Дата актуализации: 2026-04-14
+> Status: partially implemented
+> Last updated: 2026-04-14
 
 ---
 
-## Текущий статус реализации
+## Current Implementation Status
 
-- Фаза 1 (фундамент): выполнена.
-- Фаза 2 (схема БД + миграции): выполнена.
-- Фаза 3 (Catalog BC): выполнена.
-- Фаза 4 (Workspace BC): выполнена.
-- Фаза 5 (Emulation BC): выполнена.
-- Фаза 6 (Frontend): выполнена.
-- Фаза 7: в работе.
+- Phase 1 (foundation): completed.
+- Phase 2 (DB schema + migrations): completed.
+- Phase 3 (Catalog BC): completed.
+- Phase 4 (Workspace BC): completed.
+- Phase 5 (Emulation BC): completed.
+- Phase 6 (Frontend): completed.
+- Phase 7: in progress.
 
-Реально работающие endpoint'ы сейчас:
+Currently working endpoints:
 - `GET /api/providers`
 - `GET /api/providers/:id/endpoints`
 - `GET /api/projects`
@@ -30,44 +30,44 @@
 
 ---
 
-## Суть проекта
+## Project Purpose
 
-Сервис эмулирует поведение внешних API (ServiceTitan, Yelp и др.).
+The service emulates external APIs (ServiceTitan, Yelp, etc.).
 
-Базовый маршрут эмуляции:
+Base emulation route:
 `/emulate/{project-hash}/{...provider-path}`
 
-Пример:
+Example:
 `GET /emulate/a3f9c2/v2/tenant/123/appointments?status=pending`
 
 ---
 
-## Стек
+## Stack
 
-| Слой | Технология |
+| Layer | Technology |
 |---|---|
 | Framework | NestJS 11 |
 | CQRS | `@nestjs/cqrs` |
 | ORM | TypeORM |
-| БД | MySQL |
-| Миграции | TypeORM migrations (`synchronize: false`) |
-| Конфиг | `@nestjs/config` |
-| Валидация | `class-validator` + `class-transformer` |
+| Database | MySQL |
+| Migrations | TypeORM migrations (`synchronize: false`) |
+| Config | `@nestjs/config` |
+| Validation | `class-validator` + `class-transformer` |
 
 ---
 
-## Архитектурные правила (актуальные)
+## Architecture Rules (Current)
 
-- Слои модуля: `domain` → `application` → `infrastructure` → `presentation`.
-- `application` не импортирует `presentation`.
-- Контракты репозиториев объявляются в `domain/repositories`, реализации находятся в `infrastructure/persistence`.
-- `application` инжектит репозитории через доменные порты (DI token), а не через concrete TypeORM-классы.
-- Entity-файлы лежат в `domain` и используются TypeORM напрямую.
-- Для CRUD 1:1 не делаем дублирование `domain entity` и `persistence entity`.
-- CQRS структура:
+- Module layers: `domain` → `application` → `infrastructure` → `presentation`.
+- `application` must not import `presentation`.
+- Repository contracts are declared in `domain/repositories`; implementations are in `infrastructure/persistence`.
+- `application` injects repositories via domain ports (DI tokens), not concrete TypeORM classes.
+- Entity files are in `domain` and used directly by TypeORM.
+- For 1:1 CRUD, avoid duplicate `domain entity` and `persistence entity` models.
+- CQRS structure:
   - `application/queries/<query-name>/...`
   - `application/commands/<command-name>/...`
-- Один handler = один файл.
+- One handler per file.
 
 ---
 
@@ -75,125 +75,93 @@
 
 ### 1) Catalog BC
 
-**Ответственность:** справочник провайдеров и их endpoint-шаблонов (seed + read-only запросы).
+**Responsibility:** provider registry and provider endpoint templates (seed + read-only queries).
 
-**Реализовано:**
-- seed ServiceTitan и Yelp (идемпотентно при старте)
+**Implemented:**
+- idempotent ServiceTitan and Yelp seed on startup
 - `ListProvidersQuery`
 - `GetProviderWithEndpointsQuery`
-- HTTP контроллер для чтения каталога
+- HTTP controller for reading catalog data
 
 ### 2) Workspace BC
 
-**Ответственность:** проекты, hash, правила endpoint'ов для конкретного проекта.
+**Responsibility:** projects, hash, and project-specific endpoint rules.
 
-**Статус:** реализован (CRUD проектов и правил, query/command handlers, HTTP-контроллеры).
+**Status:** implemented (project/rule CRUD, query/command handlers, HTTP controllers).
 
 ### 3) Emulation BC
 
-**Ответственность:** обработка `ALL /emulate/:hash/*`, выбор endpoint, применение правил, формирование ответа.
+**Responsibility:** handle `ALL /emulate/:hash/*path`, select endpoint, apply rules, build response.
 
-**Статус:** реализован.
-**Подход:** через `presentation/http` controller (wildcard route), без middleware-бизнес-логики.
+**Status:** implemented.
+**Approach:** `presentation/http` wildcard controller + use case, no middleware business logic.
 
 ---
 
-## Актуальная структура файлов
+## Current File Structure
 
 ```text
 src/
 ├── bounded-contexts/
 │   ├── catalog/
 │   │   ├── domain/
-│   │   │   ├── provider.entity.ts
-│   │   │   ├── provider-endpoint.entity.ts
-│   │   │   └── repositories/
-│   │   │       └── provider.repository.ts
 │   │   ├── application/
-│   │   │   ├── commands/
-│   │   │   │   └── .gitkeep
-│   │   │   └── queries/
-│   │   │       ├── list-providers/
-│   │   │       │   ├── list-providers.query.ts
-│   │   │       │   ├── list-providers.result.ts
-│   │   │       │   └── list-providers.handler.ts
-│   │   │       └── get-provider-with-endpoints/
-│   │   │           ├── get-provider-with-endpoints.query.ts
-│   │   │           ├── get-provider-with-endpoints.result.ts
-│   │   │           └── get-provider-with-endpoints.handler.ts
 │   │   ├── infrastructure/
-│   │   │   ├── persistence/
-│   │   │   │   └── provider.repository.ts
-│   │   │   └── seed/
-│   │   │       ├── catalog-seed.service.ts
-│   │   │       ├── catalog-seed.types.ts
-│   │   │       ├── servicetitan.seed.ts
-│   │   │       └── yelp.seed.ts
-│   │   ├── presentation/
-│   │   │   └── http/
-│   │   │       ├── catalog.controller.ts
-│   │   │       └── dto/
-│   │   │           ├── provider.response.dto.ts
-│   │   │           └── provider-endpoint.response.dto.ts
-│   │   └── catalog.module.ts
-│   │
-│   └── workspace/
-│       └── domain/
-│           ├── project.entity.ts
-│           └── endpoint-rule.entity.ts
-│
+│   │   └── presentation/
+│   ├── workspace/
+│   │   ├── domain/
+│   │   ├── application/
+│   │   ├── infrastructure/
+│   │   └── presentation/
+│   └── emulation/
+│       ├── domain/
+│       ├── application/
+│       └── presentation/
 ├── migrations/
-│   └── 1776113869684-InitSchema.ts
-│
 ├── shared/
-│   ├── infrastructure/database/typeorm.config.ts
-│   └── presentation/
-│       ├── filters/global-exception.filter.ts
-│       └── interceptors/response-envelope.interceptor.ts
-│
 ├── app.module.ts
 └── main.ts
 ```
 
 ---
 
-## База данных (актуально)
+## Database (Current)
 
-Созданы таблицы:
+Created tables:
 - `providers`
 - `provider_endpoints`
 - `projects`
 - `endpoint_rules`
 - `migrations`
 
-Ключевые свойства:
-- FK и индексы применены миграцией `1776113869684-InitSchema.ts`.
-- Индекс на `endpoint_rules(project_id, provider_endpoint_id, priority)` присутствует.
+Key notes:
+- FKs and indexes are applied by migration `1776113869684-InitSchema.ts`.
+- Composite index exists on `endpoint_rules(project_id, provider_endpoint_id, priority)`.
 
 ---
 
-## Текущий поток данных Catalog
+## Current Catalog Data Flow
 
 ### `GET /api/providers`
 
-1. `CatalogController` отправляет `ListProvidersQuery` в `QueryBus`.
-2. `ListProvidersHandler` читает данные через `ProviderRepository.findAll()`.
-3. Результат возвращается как `ListProvidersResultItem[]`.
-4. `ResponseEnvelopeInterceptor` оборачивает ответ в `{ data, meta }`.
+1. `CatalogController` sends `ListProvidersQuery` via `QueryBus`.
+2. `ListProvidersHandler` reads via `ProviderRepository.findAll()`.
+3. Result returns as `ListProvidersResultItem[]`.
+4. `ResponseEnvelopeInterceptor` wraps into `{ data, meta }`.
 
 ### `GET /api/providers/:id/endpoints`
 
-1. `CatalogController` отправляет `GetProviderWithEndpointsQuery`.
-2. `GetProviderWithEndpointsHandler` вызывает `ProviderRepository.findByIdWithEndpoints()`.
-3. При отсутствии провайдера кидается `NotFoundException`.
-4. Результат возвращается как `GetProviderWithEndpointsResult`.
-5. `ResponseEnvelopeInterceptor` оборачивает ответ в `{ data, meta }`.
+1. `CatalogController` sends `GetProviderWithEndpointsQuery`.
+2. `GetProviderWithEndpointsHandler` calls `ProviderRepository.findByIdWithEndpoints()`.
+3. If provider is missing, throws `NotFoundException`.
+4. Result returns as `GetProviderWithEndpointsResult`.
+5. `ResponseEnvelopeInterceptor` wraps into `{ data, meta }`.
 
 ---
 
-## Миграции
+## Migrations
 
-Скрипты:
+Scripts:
 
 ```json
 {
@@ -203,37 +171,38 @@ src/
 }
 ```
 
-`typeorm.config.ts` использует glob на entity в `domain/**`.
+`typeorm.config.ts` uses entity glob discovery in `domain/**`.
 
 ---
 
-## Эмуляция авторизации (auth endpoints)
+## Auth Emulation (Auth Endpoints)
 
-### Подход
+### Approach
 
-Auth-эндпоинты провайдеров (например, `POST /connect/token` у ServiceTitan) —
-это **обычные `provider_endpoint`** в seed-данных. Никаких новых таблиц и специальной
-middleware не требуется. Всё проходит через `EmulationController` → `EmulateUseCase` → `PathMatcher` / `RuleEvaluator` / `ResponseBuilder`.
+Provider auth endpoints (for example, `POST /connect/token` for ServiceTitan) are regular `provider_endpoint` seed records.
+No new tables and no special middleware are required.
+Runtime flow: `EmulationController` → `EmulateUseCase` → `PathMatcher` / `RuleEvaluator` / `ResponseBuilder`.
 
-Токены на последующих запросах **не валидируются**. Эмулятор статичен — он отвечает
-на основе правил, а не внутреннего состояния.
+Subsequent token validation is intentionally not implemented.
+The emulator is stateless and responds based on rules.
 
-### Пометка auth-эндпоинтов
+### Marking auth endpoints
 
-Поле `is_auth_endpoint: boolean` на entity `ProviderEndpoint` — **только для UI**,
-чтобы визуально отделить auth-маршруты от бизнес-маршрутов в интерфейсе.
+`is_auth_endpoint: boolean` on `ProviderEndpoint` is UI metadata only.
+It allows visual separation of auth routes from business routes.
 
-### Динамический токен через шаблоны
+### Dynamic token via templates
 
-`ResponseBuilder` поддерживает шаблонные плейсхолдеры в `default_response` / `action_response`:
+`ResponseBuilder` supports template placeholders in `default_response` / `action_response`:
 
-| Плейсхолдер | Результат |
+| Placeholder | Result |
 |---|---|
 | `{{uuid}}` | `crypto.randomUUID()` |
-| `{{timestamp}}` | текущий ISO timestamp |
-| `{{integer}}` | случайное целое 1–9999 |
+| `{{timestamp}}` | current ISO timestamp |
+| `{{integer}}` | random integer 1–9999 |
 
-Auth-эндпоинт ServiceTitan в seed:
+ServiceTitan auth endpoint example in seed:
+
 ```json
 {
   "method": "POST",
@@ -248,14 +217,14 @@ Auth-эндпоинт ServiceTitan в seed:
 }
 ```
 
-Каждый вызов `POST /emulate/a3f9c2/connect/token` возвращает свежий UUID.
-Клиент парсит токен, кладёт в заголовок — поведение идентично продакшену.
+Each `POST /emulate/a3f9c2/connect/token` call returns a fresh UUID.
+Client behavior remains production-like.
 
-### Тестирование сценария «невалидный токен»
+### Testing invalid token scenario
 
-Реализуется через обычный `EndpointRule` на любом эндпоинте:
+Implemented via a regular `EndpointRule`, for example:
 
-```
+```text
 condition_source:   header
 condition_key:      authorization
 condition_operator: not_exists
@@ -264,37 +233,19 @@ action_response:    { "error": "Unauthorized", "message": "Bearer token is missi
 priority:           1
 ```
 
-### Поле `auth_config` на Provider
+### `auth_config` on Provider
 
-Хранит метаданные для отображения в UI — не используется в runtime:
+Used as UI metadata only, not runtime logic.
 
-```json
-{
-  "token_endpoint": "/connect/token",
-  "header_name": "Authorization",
-  "header_format": "Bearer {token}"
-}
-```
+### Yelp and providers without OAuth
 
-### Yelp и провайдеры без OAuth
-
-Для провайдеров с API Key (Yelp) auth-эндпоинт не нужен —
-ключ передаётся статично в заголовке. `auth_config` описывает это для UI:
-
-```json
-{
-  "header_name": "Authorization",
-  "header_format": "Bearer {api_key}"
-}
-```
+For API-key providers like Yelp, no auth endpoint is required.
+Key is passed statically via headers, and `auth_config` documents this for the UI.
 
 ---
 
-## Ближайшие шаги
+## Next Steps
 
-1. Реализовать Workspace BC в том же CQRS-формате (`queries/<name>`, `commands/<name>`).
-2. Добавить domain VO для Workspace (`project-hash`, `rule-condition`) с инвариантами.
-3. Добавить `is_auth_endpoint` в entity `ProviderEndpoint` + миграция.
-4. Добавить auth-эндпоинт ServiceTitan в seed + шаблонную логику в `ResponseBuilder`.
-5. Реализовать Emulation BC через controller `/emulate/:hash/*`.
-6. Добавить frontend слой (`public/index.html`) после стабилизации API.
+1. Complete Phase 7 edge-case hardening and regression checks.
+2. Finalize `README.md` with runbook and provider extension flow.
+3. Do final documentation pass for full code/document parity.

@@ -1,174 +1,174 @@
 # API Emulator — Development Plan
 
-> Каждая фаза заканчивается работающим, тестируемым состоянием.
-> Следующая фаза начинается только после проверки предыдущей.
+> Each phase must end in a working, testable state.
+> Start the next phase only after verifying the previous one.
 
 ---
 
-## Фаза 1 — Фундамент
-**Цель:** приложение запускается, БД подключается, базовая инфраструктура готова.
+## Phase 1 — Foundation
+**Goal:** the app starts, DB connection works, core infrastructure is ready.
 
-- [x] Установка зависимостей:
+- [x] Install dependencies:
   `@nestjs/typeorm`, `typeorm`, `mysql2`, `@nestjs/config`,
   `class-validator`, `class-transformer`, `@nestjs/cqrs`, `@nestjs/serve-static`
 - [x] `.env` + `.env.example` (DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, APP_PORT)
-- [x] `@nestjs/config` подключён в `AppModule` (isGlobal: true)
-- [x] `typeorm.config.ts` в `shared/infrastructure/database/` (synchronize: false, путь к миграциям)
-- [x] Скрипты в `package.json`: `migration:generate`, `migration:run`, `migration:revert`
-- [x] Глобальный префикс `/api` в `main.ts`
-- [x] `GlobalExceptionFilter` зарегистрирован глобально
-- [x] `ResponseEnvelopeInterceptor` зарегистрирован глобально (оборачивает ответы в `{ data, meta }`)
-- [x] Удалены дефолтные файлы стартера (`app.controller.ts`, `app.service.ts`, `app.controller.spec.ts`)
+- [x] `@nestjs/config` connected in `AppModule` (`isGlobal: true`)
+- [x] `typeorm.config.ts` in `shared/infrastructure/database/` (`synchronize: false`, migrations path)
+- [x] `package.json` scripts: `migration:generate`, `migration:run`, `migration:revert`
+- [x] Global `/api` prefix in `main.ts`
+- [x] `GlobalExceptionFilter` registered globally
+- [x] `ResponseEnvelopeInterceptor` registered globally (wraps responses into `{ data, meta }`)
+- [x] Remove starter defaults (`app.controller.ts`, `app.service.ts`, `app.controller.spec.ts`)
 
-**Проверка:** `npm run start:dev` стартует без ошибок, БД подключена, `GET /api` → 404.
+**Validation:** `npm run start:dev` starts without errors, DB is connected, `GET /api` → 404.
 
 ---
 
-## Фаза 2 — Схема БД
-**Цель:** все 4 таблицы созданы через миграцию, структура соответствует архитектуре.
+## Phase 2 — DB Schema
+**Goal:** all 4 tables are created via migration and match architecture.
 
-- [x] ORM-энтити (в соответствующих BC, папка `domain/`):
+- [x] ORM entities (inside corresponding BC, `domain/`):
   - [x] `provider.entity.ts`
   - [x] `provider-endpoint.entity.ts`
   - [x] `project.entity.ts`
   - [x] `endpoint-rule.entity.ts`
-- [x] Все энтити добавлены в `typeorm.config.ts` (entities: [...])
+- [x] All entities added to `typeorm.config.ts` (`entities: [...]`)
 - [x] `npm run migration:generate -- src/migrations/InitSchema`
-- [x] Проверить сгенерированный файл миграции
+- [x] Review generated migration file
 - [x] `npm run migration:run`
-- [x] Проверить таблицы в БД (все 4 созданы с нужными колонками и индексами)
+- [x] Verify tables in DB (all 4 created with required columns and indexes)
 
-**Проверка:** таблицы `providers`, `provider_endpoints`, `projects`, `endpoint_rules` существуют в БД.
+**Validation:** tables `providers`, `provider_endpoints`, `projects`, `endpoint_rules` exist in DB.
 
 ---
 
-## Фаза 3 — Catalog BC
-**Цель:** `GET /api/providers` возвращает ServiceTitan и Yelp с их эндпоинтами.
+## Phase 3 — Catalog BC
+**Goal:** `GET /api/providers` returns ServiceTitan and Yelp with endpoints.
 
 - [x] Domain:
   - [x] `provider.entity.ts`
   - [x] `provider-endpoint.entity.ts`
-  - [x] Используем единые entity в `domain` и TypeORM напрямую (без дублирования domain/persistence сущностей)
+  - [x] Use unified entities in `domain` directly with TypeORM (no domain/persistence entity duplication)
 - [x] Infrastructure:
   - [x] `provider.repository.ts`
-  - [x] `seed/catalog-seed.service.ts` (через `OnModuleInit`, идемпотентно)
-  - [x] `seed/servicetitan.seed.ts` (10 эндпоинтов с реальными дефолтными ответами)
-  - [x] `seed/yelp.seed.ts` (5 эндпоинтов с реальными дефолтными ответами)
+  - [x] `seed/catalog-seed.service.ts` (via `OnModuleInit`, idempotent)
+  - [x] `seed/servicetitan.seed.ts` (10 endpoints with realistic default responses)
+  - [x] `seed/yelp.seed.ts` (5 endpoints with realistic default responses)
 - [x] Application:
   - [x] `queries/list-providers.query.ts` + `handlers/list-providers.handler.ts`
   - [x] `queries/get-provider-with-endpoints.query.ts` + `handlers/get-provider-with-endpoints.handler.ts`
-- [x] Interface:
+- [x] Presentation:
   - [x] `catalog.controller.ts` (`GET /api/providers`, `GET /api/providers/:id/endpoints`)
   - [x] `dto/provider.response.dto.ts`
   - [x] `dto/provider-endpoint.response.dto.ts`
-- [x] `catalog.module.ts` зарегистрирован в `AppModule`
+- [x] `catalog.module.ts` registered in `AppModule`
 
-**Проверка:** `GET /api/providers` → список 2 провайдеров. `GET /api/providers/1/endpoints` → 10 эндпоинтов ST.
+**Validation:** `GET /api/providers` → 2 providers. `GET /api/providers/1/endpoints` → 10 ST endpoints.
 
 ---
 
-## Фаза 4 — Workspace BC
-**Цель:** полный CRUD проектов и правил, всё персистируется в БД.
+## Phase 4 — Workspace BC
+**Goal:** full CRUD for projects and rules, persisted in DB.
 
 - [x] Domain:
-  - [x] `project.entity.ts` (без `ProjectAggregate` на текущем этапе)
+  - [x] `project.entity.ts` (no `ProjectAggregate` at this stage)
   - [x] `endpoint-rule.entity.ts`
-  - [x] `value-objects/project-hash.vo.ts` (crypto.randomBytes(6).toString('hex'))
+  - [x] `value-objects/project-hash.vo.ts` (`crypto.randomBytes(6).toString('hex')`)
   - [x] `value-objects/rule-condition.vo.ts`
 - [x] Infrastructure:
   - [x] `persistence/project.repository.ts`
   - [x] `persistence/endpoint-rule.repository.ts`
 - [x] Commands + Handlers:
-  - [x] `create-project` (генерирует hash, проверяет провайдер)
-  - [x] `delete-project` (каскад удаляет endpoint_rules)
-  - [x] `upsert-endpoint-rule` (проверяет принадлежность endpoint провайдеру проекта)
+  - [x] `create-project` (generates hash, validates provider)
+  - [x] `delete-project` (cascade deletes endpoint rules)
+  - [x] `upsert-endpoint-rule` (validates endpoint belongs to project provider)
   - [x] `delete-endpoint-rule`
 - [x] Queries + Handlers:
-  - [x] `list-projects` (с именем провайдера)
-  - [x] `get-project-detail` (проект + все эндпоинты провайдера + правила для каждого)
+  - [x] `list-projects` (with provider name)
+  - [x] `get-project-detail` (project + all provider endpoints + per-endpoint rules)
 - [x] Presentation:
   - [x] `projects.controller.ts` (`GET /api/projects`, `POST`, `GET /:id`, `DELETE /:id`)
   - [x] `endpoint-rules.controller.ts` (`GET /api/projects/:id/rules`, `POST`, `PUT /:ruleId`, `DELETE /:ruleId`)
-  - [x] DTO: `create-project.dto.ts`, `project.response.dto.ts`, `upsert-endpoint-rule.dto.ts`, `endpoint-rule.response.dto.ts`
-- [x] `workspace.module.ts` зарегистрирован в `AppModule`
+  - [x] DTOs: `create-project.dto.ts`, `project.response.dto.ts`, `upsert-endpoint-rule.dto.ts`, `endpoint-rule.response.dto.ts`
+- [x] `workspace.module.ts` registered in `AppModule`
 
-**Проверка:** через Postman — создать проект, добавить 3 правила с разными условиями, получить детали, удалить правило.
-
----
-
-## Фаза 5 — Emulation BC
-**Цель:** `/emulate/{hash}/...` возвращает эмулированный ответ с учётом правил.
-
-- [ ] Domain Services:
-  - [ ] `path-matcher.service.ts` (сегментное сопоставление с паттерном, wildcards `:param`)
-  - [ ] `rule-evaluator.service.ts` (операторы: eq, contains, exists, not_exists, regex; источники: query_param, body_field, header, path_param, none)
-  - [ ] `response-builder.service.ts` (дефолт / override / рандомизация структуры)
-- [ ] Application:
-  - [ ] `emulate.use-case.ts` (оркестрирует: hash → project → endpoints → match → rules → evaluate → build → respond)
-- [ ] Presentation:
-  - [ ] `emulation.controller.ts` (wildcard route на `/emulate/:hash/*`, парсит request-context и делегирует в `emulate.use-case.ts`)
-- [ ] `emulation.module.ts` зарегистрирован, controller подключён в `AppModule`
-
-**Проверка:**
-- Запрос к несуществующему hash → 404
-- Запрос к несуществующему эндпоинту провайдера → 404
-- Нет правил → дефолтный ответ провайдера
-- Правило с `condition_source=none` → всегда срабатывает
-- Правило с `query_param status eq pending` → срабатывает при `?status=pending`
-- `action_delay_ms=2000` → ответ приходит через ~2 секунды
-- `action_random=true` → структура ответа сохранена, значения случайные
+**Validation:** create project, add 3 rules with different conditions, get details, delete rule.
 
 ---
 
-## Фаза 6 — Фронтенд ✅
-**Цель:** через браузер можно управлять проектами и правилами без Postman.
+## Phase 5 — Emulation BC
+**Goal:** `/emulate/{hash}/...` returns emulated responses with rules applied.
 
-- [x] `@nestjs/serve-static` подключён в `AppModule` (root: `public/`, exclude: `/api/*`, `/emulate/*`)
+- [x] Domain services:
+  - [x] `path-matcher.service.ts` (segment matching with `:param` wildcards)
+  - [x] `rule-evaluator.service.ts` (operators: `eq`, `contains`, `exists`, `not_exists`, `regex`; sources: `query_param`, `body_field`, `header`, `path_param`, `none`)
+  - [x] `response-builder.service.ts` (default / override / randomized structure)
+- [x] Application:
+  - [x] `emulate.use-case.ts` (orchestrates: hash → project → endpoints → match → rules → evaluate → build → respond)
+- [x] Presentation:
+  - [x] `emulation.controller.ts` (wildcard route `/emulate/:hash/*path`, parses request context and delegates to `emulate.use-case.ts`)
+- [x] `emulation.module.ts` registered and connected in `AppModule`
+
+**Validation:**
+- unknown hash → 404
+- unknown provider endpoint path → 404
+- no rules → provider default response
+- rule with `condition_source=none` → always matches
+- rule with `query_param status eq pending` → matches with `?status=pending`
+- `action_delay_ms=2000` → response delayed by ~2 seconds
+- `action_random=true` → same structure, randomized values
+
+---
+
+## Phase 6 — Frontend ✅
+**Goal:** manage projects/rules from browser without Postman.
+
+- [x] `@nestjs/serve-static` connected in `AppModule` (`public/`, exclude `/api/*`, `/emulate/*`)
 - [x] `public/index.html` — Vue 3 CDN SPA:
-  - [x] Состояние `projects-list`:
-    - список всех проектов (имя, провайдер, hash, дата)
-    - кнопка "Создать проект" → модал (name + select провайдера)
-    - клик по проекту → переход в `project-detail`
-  - [x] Состояние `project-detail`:
-    - шапка: имя, провайдер, base URL эмулятора для копирования
-    - таблица эндпоинтов провайдера с методом и паттерном (accordion)
-    - для каждого эндпоинта — список его правил (метка, условие, действие, теги)
-    - кнопка "Add Rule" для каждого эндпоинта → модал
-    - кнопка "← Projects" (назад)
-  - [x] Модал `RuleModal`:
-    - Поля: name, priority
-    - Условие: conditionSource (select), conditionKey, conditionOperator (select), conditionValue
-    - Действие: actionDelayMs, actionStatus, actionResponse (textarea JSON), actionRandom (toggle)
-    - isEnabled (toggle)
-    - Кнопки: Save / Cancel / Delete (в режиме редактирования)
-  - [x] Отображение ready-to-use URL с подстановкой `{param}` вместо `:param`
-  - [x] Toast-уведомления (success / error)
-  - [x] Пустые состояния и loading spinner
+  - [x] `projects-list` state:
+    - list all projects (name, provider, hash, date)
+    - `Create Project` button → modal (name + provider select)
+    - click project → `project-detail`
+  - [x] `project-detail` state:
+    - header: name, provider, emulation base URL to copy
+    - provider endpoints table (method + path pattern, accordion)
+    - per-endpoint rules list (label, condition, action, tags)
+    - `Add Rule` button per endpoint → modal
+    - `← Projects` back button
+  - [x] `RuleModal`:
+    - fields: `name`, `priority`
+    - condition: `conditionSource`, `conditionKey`, `conditionOperator`, `conditionValue`
+    - action: `actionDelayMs`, `actionStatus`, `actionResponse` (JSON textarea), `actionRandom`
+    - `isEnabled`
+    - buttons: `Save` / `Cancel` / `Delete` (in edit mode)
+  - [x] Ready-to-use URL rendering with `{param}` for `:param`
+  - [x] Toast notifications (success / error)
+  - [x] Empty states and loading spinner
 
-**Проверка:** ожидает готовности Workspace BC и Emulation BC (фазы 4–5) — API-контракт соблюдён.
-
----
-
-## Фаза 7 — Завершение
-**Цель:** проект готов к использованию и передаче.
-
-- [ ] Edge-cases в эмуляторе:
-  - [ ] Невалидный hash → 404 с понятным сообщением
-  - [ ] Нет совпавшего эндпоинта → 404 с методом и путём в сообщении
-  - [ ] Все правила disabled → дефолтный ответ провайдера
-  - [ ] `action_response` — невалидный JSON → fallback на дефолт
-- [ ] `AGENTS.md` — реальные пути, паттерны, соглашения из кода
-- [ ] `README.md` — как запустить, как добавить нового провайдера
+**Validation:** complete browser flow for project/rule management.
 
 ---
 
-## Порядок реализации внутри каждой фазы
+## Phase 7 — Finalization
+**Goal:** project is ready for usage and handover.
 
-Всегда от внутреннего к внешнему:
+- [ ] Emulation edge cases:
+  - [ ] invalid hash → 404 with clear message
+  - [ ] no matched endpoint → 404 including method and path
+  - [ ] all rules disabled → fallback to provider default
+  - [ ] invalid JSON in `action_response` → fallback to default
+- [ ] `AGENTS.md` reflects real paths, patterns, and conventions from code
+- [ ] `README.md` includes run instructions and provider extension guide
 
+---
+
+## Implementation Order Per Phase
+
+Always move from inner to outer layers:
+
+```text
+domain (core logic) → infrastructure (DB) → application (use cases) → presentation (HTTP)
 ```
-domain (чистая логика) → infrastructure (БД) → application (use cases) → presentation (HTTP)
-```
 
-Domain-слой никогда не импортирует из infrastructure.
-В проекте используется единая модель сущности: entity лежит в `domain` и используется TypeORM напрямую без дублирования в infrastructure.
+Domain layer must never import from infrastructure.
+The project uses a unified entity model: entity stays in `domain` and is used by TypeORM directly, without duplication in infrastructure.

@@ -1,38 +1,38 @@
 # AGENTS.md
 
-## Общие правила
+## General Rules
 
-- При использовании Docker-команд не запускать контейнеры в фоне (`-d` не использовать).
-- Для модулей использовать слои: `domain`, `application`, `infrastructure`, `presentation`.
-- Логирование делать через DI (`constructor(private readonly logger: Logger)`); не создавать `new Logger(...)` внутри сервисов.
+- When using Docker commands, do not run containers in the background (do not use `-d`).
+- For modules, use layers: `domain`, `application`, `infrastructure`, `presentation`.
+- Use DI for logging (`constructor(private readonly logger: Logger)`); do not create `new Logger(...)` inside services.
 
-## Domain и Value Objects
+## Domain and Value Objects
 
-- Value Objects размещаются только в `domain/value-objects/` соответствующего bounded context.
-- Value Object вводим только когда есть инварианты/поведение, а не как обертку над полями.
-- Для CRUD-сценариев, где структура 1:1, использовать одну и ту же entity в `domain` и TypeORM напрямую (без дублирования сущностей и без дополнительного маппинга entity ↔ entity).
-- Aggregate не вводить заранее: добавлять только когда появляются реальные cross-entity инварианты и операции под единым consistency boundary.
-- Контракты репозиториев (порты) объявлять в `domain/repositories`.
-- `application` зависит от портов репозиториев, а не от инфраструктурных реализаций.
+- Keep Value Objects only in `domain/value-objects/` of the corresponding bounded context.
+- Introduce a Value Object only when it has invariants/behavior, not just as a field wrapper.
+- For CRUD scenarios with 1:1 structure, use the same entity in `domain` and TypeORM directly (no duplicate entities and no extra entity ↔ entity mapping).
+- Do not introduce Aggregate preemptively: add it only when real cross-entity invariants and operations appear under a single consistency boundary.
+- Declare repository contracts (ports) in `domain/repositories`.
+- `application` depends on repository ports, not infrastructure implementations.
 
-## CQRS структура
+## CQRS Structure
 
-- Использовать структуру:
+- Use structure:
   - `application/queries/<query-name>/`
   - `application/commands/<command-name>/`
-- Внутри папки query/command держать только связанные с ней файлы:
+- Inside a query/command folder keep only related files:
   - `*.query.ts` / `*.command.ts`
   - `*.handler.ts`
-  - `*.result.ts` / `*.dto.ts` (при необходимости)
-- Один handler = один файл.
-- Вспомогательные типы/структуры (enum/type/class) размещать по отдельным файлам рядом с конкретной command/query.
-- `application` не импортирует `presentation`.
-- Если HTTP-контракт совпадает с `query result`, возвращать результат query из контроллера напрямую без лишнего маппинга.
-- Для emulation-входа использовать `presentation/http` controller с wildcard route; бизнес-логику в middleware не размещать.
+  - `*.result.ts` / `*.dto.ts` (when needed)
+- One handler = one file.
+- Put helper types/structures (`enum`/`type`/`class`) in separate files next to the specific command/query.
+- `application` must not import `presentation`.
+- If HTTP contract matches a query result, return the query result directly from the controller without extra mapping.
+- For emulation entry, use a `presentation/http` controller with wildcard route; do not place business logic in middleware.
 
-## Persistence и именование
+## Persistence and Naming
 
-- ORM-сущности именуются в формате `*.entity.ts` (без суффикса `orm-entity`).
-- Entity-файлы лежат в `domain/` каждого bounded context.
-- В `infrastructure/persistence` лежат репозитории/адаптеры, а не дублирующие entity.
-- Для TypeORM discovery использовать glob-пути в `typeorm.config.ts`, без ручного перечисления всех сущностей.
+- ORM entities are named as `*.entity.ts` (without `orm-entity` suffix).
+- Entity files are placed in `domain/` of each bounded context.
+- `infrastructure/persistence` contains repositories/adapters, not duplicate entities.
+- For TypeORM discovery, use glob paths in `typeorm.config.ts` without manually listing all entities.
