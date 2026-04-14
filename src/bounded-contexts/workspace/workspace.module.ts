@@ -52,5 +52,6 @@ const queryHandlers = [
         ...commandHandlers,
         ...queryHandlers,
     ],
+    exports: [PROJECT_REPOSITORY, ENDPOINT_RULE_REPOSITORY],
 })
 export class WorkspaceModule {}

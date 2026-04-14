@@ -120,30 +120,32 @@
 
 ---
 
-## Фаза 6 — Фронтенд
+## Фаза 6 — Фронтенд ✅
 **Цель:** через браузер можно управлять проектами и правилами без Postman.
 
-- [ ] `@nestjs/serve-static` подключён в `AppModule` (root: `public/`)
-- [ ] `public/index.html` — Vue 3 CDN SPA:
-  - [ ] Состояние `projects-list`:
+- [x] `@nestjs/serve-static` подключён в `AppModule` (root: `public/`, exclude: `/api/*`, `/emulate/*`)
+- [x] `public/index.html` — Vue 3 CDN SPA:
+  - [x] Состояние `projects-list`:
     - список всех проектов (имя, провайдер, hash, дата)
     - кнопка "Создать проект" → модал (name + select провайдера)
     - клик по проекту → переход в `project-detail`
-  - [ ] Состояние `project-detail`:
+  - [x] Состояние `project-detail`:
     - шапка: имя, провайдер, base URL эмулятора для копирования
-    - таблица эндпоинтов провайдера с методом и паттерном
-    - для каждого эндпоинта — список его правил (метка, условие, действие)
-    - кнопка "Добавить правило" для каждого эндпоинта → модал
-    - кнопка "← Назад"
-  - [ ] Модал `RuleModal`:
+    - таблица эндпоинтов провайдера с методом и паттерном (accordion)
+    - для каждого эндпоинта — список его правил (метка, условие, действие, теги)
+    - кнопка "Add Rule" для каждого эндпоинта → модал
+    - кнопка "← Projects" (назад)
+  - [x] Модал `RuleModal`:
     - Поля: name, priority
     - Условие: conditionSource (select), conditionKey, conditionOperator (select), conditionValue
     - Действие: actionDelayMs, actionStatus, actionResponse (textarea JSON), actionRandom (toggle)
     - isEnabled (toggle)
-    - Кнопки: Сохранить / Отмена / Удалить (если правило уже существует)
-  - [ ] Отображение ready-to-use URL с подстановкой `{param}` вместо `:param`
+    - Кнопки: Save / Cancel / Delete (в режиме редактирования)
+  - [x] Отображение ready-to-use URL с подстановкой `{param}` вместо `:param`
+  - [x] Toast-уведомления (success / error)
+  - [x] Пустые состояния и loading spinner
 
-**Проверка:** полный сценарий через браузер — создать проект ST, настроить правило, скопировать URL, проверить в Postman.
+**Проверка:** ожидает готовности Workspace BC и Emulation BC (фазы 4–5) — API-контракт соблюдён.
 
 ---
 

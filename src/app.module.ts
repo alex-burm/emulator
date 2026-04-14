@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { CatalogModule } from './bounded-contexts/catalog/catalog.module';
+import { EmulationModule } from './bounded-contexts/emulation/emulation.module';
 import { WorkspaceModule } from './bounded-contexts/workspace/workspace.module';
 import { buildTypeOrmOptions } from './shared/infrastructure/database/typeorm.config';
 
@@ -30,6 +31,7 @@ import { buildTypeOrmOptions } from './shared/infrastructure/database/typeorm.co
         }),
         CatalogModule,
         WorkspaceModule,
+        EmulationModule,
     ],
 })
 export class AppModule {}

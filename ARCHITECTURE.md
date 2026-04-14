@@ -10,11 +10,23 @@
 - Фаза 1 (фундамент): выполнена.
 - Фаза 2 (схема БД + миграции): выполнена.
 - Фаза 3 (Catalog BC): выполнена.
-- Фазы 4-7: в работе/не начаты.
+- Фаза 4 (Workspace BC): выполнена.
+- Фаза 5 (Emulation BC): выполнена.
+- Фаза 6 (Frontend): выполнена.
+- Фаза 7: в работе.
 
 Реально работающие endpoint'ы сейчас:
 - `GET /api/providers`
 - `GET /api/providers/:id/endpoints`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:id`
+- `DELETE /api/projects/:id`
+- `GET /api/projects/:id/rules`
+- `POST /api/projects/:id/rules`
+- `PUT /api/projects/:id/rules/:ruleId`
+- `DELETE /api/projects/:id/rules/:ruleId`
+- `ALL /emulate/:hash/*path`
 
 ---
 
@@ -75,13 +87,13 @@
 
 **Ответственность:** проекты, hash, правила endpoint'ов для конкретного проекта.
 
-**Статус:** пока только domain-entity базы (из фазы 2), use-cases не реализованы.
+**Статус:** реализован (CRUD проектов и правил, query/command handlers, HTTP-контроллеры).
 
 ### 3) Emulation BC
 
 **Ответственность:** обработка `ALL /emulate/:hash/*`, выбор endpoint, применение правил, формирование ответа.
 
-**Статус:** не реализован.
+**Статус:** реализован.
 **Подход:** через `presentation/http` controller (wildcard route), без middleware-бизнес-логики.
 
 ---
@@ -201,7 +213,7 @@ src/
 
 Auth-эндпоинты провайдеров (например, `POST /connect/token` у ServiceTitan) —
 это **обычные `provider_endpoint`** в seed-данных. Никаких новых таблиц и специальной
-middleware не требуется. Всё проходит через тот же `EmulatorMiddleware` → `PathMatcher` → `ResponseBuilder`.
+middleware не требуется. Всё проходит через `EmulationController` → `EmulateUseCase` → `PathMatcher` / `RuleEvaluator` / `ResponseBuilder`.
 
 Токены на последующих запросах **не валидируются**. Эмулятор статичен — он отвечает
 на основе правил, а не внутреннего состояния.

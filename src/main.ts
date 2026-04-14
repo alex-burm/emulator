@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/presentation/filters/global-exception.filter';
@@ -6,7 +6,12 @@ import { ResponseEnvelopeInterceptor } from './shared/presentation/interceptors/
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    app.setGlobalPrefix('api');
+    app.setGlobalPrefix('api', {
+        exclude: [
+            { path: 'emulate/:hash', method: RequestMethod.ALL },
+            { path: 'emulate/:hash/*path', method: RequestMethod.ALL },
+        ],
+    });
     app.useGlobalPipes(
         new ValidationPipe({
             transform: true,
