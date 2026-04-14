@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { In } from 'typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ProviderEndpointEntity } from '../../domain/entity/provider-endpoint.entity';
 import { ProviderEntity } from '../../domain/entity/provider.entity';
@@ -55,6 +56,65 @@ export class TypeOrmProviderRepository implements ProviderRepositoryInterface {
                 );
 
                 await manager.save(ProviderEndpointEntity, endpointEntities);
+            }
+        });
+    }
+
+    async syncMissingSeedEndpoints(
+        providerSeeds: ProviderSeed[],
+    ): Promise<void> {
+        await this.dataSource.transaction(async (manager) => {
+            const slugs = providerSeeds.map((seed) => seed.slug);
+            const providers = await manager.find(ProviderEntity, {
+                where: {
+                    slug: In(slugs),
+                },
+            });
+
+            for (const provider of providers) {
+                const seed = providerSeeds.find(
+                    (item) => item.slug === provider.slug,
+                );
+
+                if (!seed) {
+                    continue;
+                }
+
+                const existingEndpoints = await manager.find(
+                    ProviderEndpointEntity,
+                    {
+                        where: {
+                            providerId: provider.id,
+                        },
+                    },
+                );
+
+                for (const endpoint of seed.endpoints) {
+                    const exists = existingEndpoints.some(
+                        (item) =>
+                            item.method.toUpperCase() ===
+                                endpoint.method.toUpperCase() &&
+                            item.pathPattern === endpoint.pathPattern,
+                    );
+
+                    if (exists) {
+                        continue;
+                    }
+
+                    const entity = manager.create(ProviderEndpointEntity, {
+                        providerId: provider.id,
+                        method: endpoint.method,
+                        pathPattern: endpoint.pathPattern,
+                        description: endpoint.description,
+                        defaultStatus: endpoint.defaultStatus,
+                        defaultResponse: endpoint.defaultResponse,
+                        defaultHeaders: endpoint.defaultHeaders ?? {
+                            'Content-Type': 'application/json',
+                        },
+                    });
+
+                    await manager.save(ProviderEndpointEntity, entity);
+                }
             }
         });
     }

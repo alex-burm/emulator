@@ -51,6 +51,11 @@ export class TypeOrmProjectRepository implements ProjectRepositoryInterface {
         return this.projectRepository.save(entity);
     }
 
+    async updateName(id: number, name: string): Promise<ProjectEntity | null> {
+        await this.projectRepository.update({ id }, { name });
+        return this.findByIdWithProvider(id);
+    }
+
     async deleteById(id: number): Promise<boolean> {
         const result = await this.projectRepository.delete({ id });
         return (result.affected ?? 0) > 0;

@@ -5,6 +5,7 @@ import { CatalogModule } from '../catalog/catalog.module';
 import { CreateProjectHandler } from './application/command/create-project/create-project.handler';
 import { DeleteEndpointRuleHandler } from './application/command/delete-endpoint-rule/delete-endpoint-rule.handler';
 import { DeleteProjectHandler } from './application/command/delete-project/delete-project.handler';
+import { RenameProjectHandler } from './application/command/rename-project/rename-project.handler';
 import { UpsertEndpointRuleHandler } from './application/command/upsert-endpoint-rule/upsert-endpoint-rule.handler';
 import { GetProjectDetailHandler } from './application/query/get-project-detail/get-project-detail.handler';
 import { ListProjectRulesHandler } from './application/query/list-project-rules/list-project-rules.handler';
@@ -21,6 +22,7 @@ import { ProjectsController } from './presentation/http/projects.controller';
 const commandHandlers = [
     CreateProjectHandler,
     DeleteProjectHandler,
+    RenameProjectHandler,
     UpsertEndpointRuleHandler,
     DeleteEndpointRuleHandler,
 ];

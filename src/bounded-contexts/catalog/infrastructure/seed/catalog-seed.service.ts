@@ -14,8 +14,12 @@ export class CatalogSeedService implements OnModuleInit {
         const isEmpty = await this.providerRepository.isEmpty();
 
         if (!isEmpty) {
+            await this.providerRepository.syncMissingSeedEndpoints([
+                SERVICETITAN_PROVIDER_SEED,
+                YELP_PROVIDER_SEED,
+            ]);
             this.logger.log(
-                'Catalog seed skipped: providers table is not empty.',
+                'Catalog seed synced: added missing seed endpoints for existing providers.',
                 CatalogSeedService.name,
             );
             return;

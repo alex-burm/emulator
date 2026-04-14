@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>API Emulator</title>
   <style>
+    [v-cloak] { display: none !important; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
@@ -284,7 +285,7 @@
   </style>
 </head>
 <body>
-<div id="app">
+<div id="app" v-cloak>
 
   <!-- ── Header ── -->
   <header class="app-header">
@@ -357,7 +358,21 @@
       <div class="detail-header">
         <div class="detail-top">
           <div style="flex:1">
-            <div class="detail-title">{{ currentProject.name }}</div>
+            <div v-if="!renaming" class="detail-title" style="cursor:pointer; display:inline-flex; align-items:center; gap:8px" @click="startRename" title="Click to rename">
+              {{ currentProject.name }}
+              <span style="font-size:14px; color:var(--text-3); font-weight:400">✏</span>
+            </div>
+            <div v-else style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
+              <input
+                ref="renameInputEl"
+                v-model="newName"
+                class="finput"
+                style="font-size:18px; font-weight:700; max-width:360px"
+                @keydown.enter="saveRename"
+                @keydown.escape="cancelRename"
+                @blur="saveRename"
+              />
+            </div>
             <div class="detail-badges" style="margin-bottom:14px">
               <span class="badge badge-provider">{{ currentProject.provider?.name }}</span>
               <code class="mono">{{ currentProject.hash }}</code>
@@ -621,7 +636,7 @@
 </script>
 
 <script type="module">
-import { createApp, ref, reactive, onMounted } from 'vue'
+import { createApp, ref, reactive, onMounted, nextTick } from 'vue'
 
 // ─── API layer ───────────────────────────────────────────────────────────────
 
@@ -643,6 +658,7 @@ const api = {
   get:    path        => apiFetch('GET',    path),
   post:   (path, b)  => apiFetch('POST',   path, b),
   put:    (path, b)  => apiFetch('PUT',    path, b),
+  patch:  (path, b)  => apiFetch('PATCH',  path, b),
   delete: path        => apiFetch('DELETE', path),
 }
 
@@ -737,6 +753,35 @@ createApp({
         notify('Project deleted')
         backToList()
         await loadProjects()
+      } catch (e) { notify(e.message, 'error') }
+    }
+
+    // ── Rename project ───────────────────────────────────────────────────────
+    const renaming       = ref(false)
+    const newName        = ref('')
+    const renameInputEl  = ref(null)
+
+    function startRename() {
+      newName.value  = currentProject.value.name
+      renaming.value = true
+      nextTick(() => renameInputEl.value?.focus())
+    }
+
+    function cancelRename() {
+      renaming.value = false
+    }
+
+    async function saveRename() {
+      if (!renaming.value) return
+      renaming.value = false
+      const trimmed = newName.value.trim()
+      if (!trimmed || trimmed === currentProject.value.name) return
+      try {
+        await api.patch(`/projects/${currentProject.value.id}`, { name: trimmed })
+        currentProject.value = { ...currentProject.value, name: trimmed }
+        const p = projects.value.find(p => p.id === currentProject.value.id)
+        if (p) p.name = trimmed
+        notify('Project renamed')
       } catch (e) { notify(e.message, 'error') }
     }
 
@@ -887,6 +932,7 @@ createApp({
       openCreateModal, submitCreate,
       navigateToProject, backToList, confirmDeleteProject, toggleEp,
       openAddRule, openEditRule, submitRule, submitDeleteRule,
+      renaming, newName, renameInputEl, startRename, cancelRename, saveRename,
       copy, fmtDate, baseUrl, emulatorUrl, sorted,
       condStr, condKeyLabel, condKeyPlaceholder,
     }

@@ -15,5 +15,6 @@ export interface ProjectRepositoryInterface {
     findByIdWithProvider(id: number): Promise<ProjectEntity | null>;
     findByHash(hash: string): Promise<ProjectEntity | null>;
     createAndSave(data: CreateProjectData): Promise<ProjectEntity>;
+    updateName(id: number, name: string): Promise<ProjectEntity | null>;
     deleteById(id: number): Promise<boolean>;
 }
