@@ -36,7 +36,7 @@ export class ProviderEndpointEntity {
     defaultStatus!: number;
 
     @Column({ name: 'default_response', type: 'json', nullable: true })
-    defaultResponse!: Record<string, unknown> | null;
+    defaultResponse!: unknown | null;
 
     @Column({ name: 'default_headers', type: 'json', nullable: true })
     defaultHeaders!: Record<string, string> | null;

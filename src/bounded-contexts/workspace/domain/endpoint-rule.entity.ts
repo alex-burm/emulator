@@ -83,7 +83,7 @@ export class EndpointRuleEntity {
     actionStatus!: number | null;
 
     @Column({ name: 'action_response', type: 'json', nullable: true })
-    actionResponse!: Record<string, unknown> | null;
+    actionResponse!: unknown | null;
 
     @Column({ name: 'action_random', type: 'boolean', default: false })
     actionRandom!: boolean;

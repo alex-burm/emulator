@@ -3,7 +3,6 @@ import {
     IsIn,
     IsInt,
     IsNotEmpty,
-    IsObject,
     IsOptional,
     IsString,
     MaxLength,
@@ -55,8 +54,7 @@ export class UpsertEndpointRuleDto {
     actionStatus!: number | null;
 
     @IsOptional()
-    @IsObject()
-    actionResponse!: Record<string, unknown> | null;
+    actionResponse!: unknown | null;
 
     @IsBoolean()
     actionRandom!: boolean;

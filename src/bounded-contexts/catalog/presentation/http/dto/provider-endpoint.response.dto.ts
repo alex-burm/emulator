@@ -4,6 +4,6 @@ export class ProviderEndpointResponseDto {
     pathPattern!: string;
     description!: string | null;
     defaultStatus!: number;
-    defaultResponse!: Record<string, unknown> | null;
+    defaultResponse!: unknown | null;
     defaultHeaders!: Record<string, string> | null;
 }

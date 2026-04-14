@@ -13,7 +13,7 @@ export type ProjectDetailRuleResult = {
     conditionValue: string | null;
     actionDelayMs: number;
     actionStatus: number | null;
-    actionResponse: Record<string, unknown> | null;
+    actionResponse: unknown | null;
     actionRandom: boolean;
     isEnabled: boolean;
     createdAt: Date;
@@ -25,7 +25,7 @@ export type ProjectDetailEndpointResult = {
     pathPattern: string;
     description: string | null;
     defaultStatus: number;
-    defaultResponse: Record<string, unknown> | null;
+    defaultResponse: unknown | null;
     defaultHeaders: Record<string, string> | null;
     rules: ProjectDetailRuleResult[];
 };

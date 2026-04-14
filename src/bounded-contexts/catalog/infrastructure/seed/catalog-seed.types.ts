@@ -3,7 +3,7 @@ export type ProviderEndpointSeed = {
     pathPattern: string;
     description: string;
     defaultStatus: number;
-    defaultResponse: Record<string, unknown>;
+    defaultResponse: unknown;
     defaultHeaders?: Record<string, string>;
 };
 

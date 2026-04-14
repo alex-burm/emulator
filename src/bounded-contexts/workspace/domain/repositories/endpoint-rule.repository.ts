@@ -14,7 +14,7 @@ export type SaveEndpointRuleData = {
     conditionValue: string | null;
     actionDelayMs: number;
     actionStatus: number | null;
-    actionResponse: Record<string, unknown> | null;
+    actionResponse: unknown | null;
     actionRandom: boolean;
     isEnabled: boolean;
 };

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In } from 'typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { ProviderEndpointEntity } from '../../domain/entity/provider-endpoint.entity';
 import { ProviderEntity } from '../../domain/entity/provider.entity';
@@ -64,20 +63,24 @@ export class TypeOrmProviderRepository implements ProviderRepositoryInterface {
         providerSeeds: ProviderSeed[],
     ): Promise<void> {
         await this.dataSource.transaction(async (manager) => {
-            const slugs = providerSeeds.map((seed) => seed.slug);
-            const providers = await manager.find(ProviderEntity, {
-                where: {
-                    slug: In(slugs),
-                },
-            });
+            for (const seed of providerSeeds) {
+                let provider = await manager.findOne(ProviderEntity, {
+                    where: { slug: seed.slug },
+                });
 
-            for (const provider of providers) {
-                const seed = providerSeeds.find(
-                    (item) => item.slug === provider.slug,
-                );
-
-                if (!seed) {
-                    continue;
+                if (!provider) {
+                    provider = await manager.save(
+                        ProviderEntity,
+                        manager.create(ProviderEntity, {
+                            slug: seed.slug,
+                            name: seed.name,
+                            description: seed.description,
+                            authType: seed.authType,
+                            baseUrl: seed.baseUrl,
+                            defaultHeaders: seed.defaultHeaders,
+                            authConfig: seed.authConfig,
+                        }),
+                    );
                 }
 
                 const existingEndpoints = await manager.find(
