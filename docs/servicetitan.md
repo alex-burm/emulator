@@ -1,18 +1,18 @@
 # ServiceTitan API — Reference for Emulator
 
-> Источники: developer.servicetitan.io, GitHub-клиенты, публичные интеграционные гайды  
-> Версия API: v2  
-> Используется как шаблон для seed-данных эмулятора
+> Sources: developer.servicetitan.io, GitHub clients, public integration guides  
+> API version: v2  
+> Used as a template for emulator seed data
 
 ---
 
-## Обзор
+## Overview
 
 **Base URL:** `https://api.servicetitan.io`  
-**Версия:** `/v2/tenant/{tenantId}/...`  
+**Version:** `/v2/tenant/{tenantId}/...`  
 **Auth:** OAuth2 Client Credentials → Bearer token
 
-### Обязательные заголовки
+### Required headers
 
 ```http
 Authorization: Bearer {access_token}
@@ -20,7 +20,7 @@ ST-App-Key: {app_key}
 Content-Type: application/json
 ```
 
-### Получение токена
+### Token retrieval
 
 ```
 POST https://auth.servicetitan.io/connect/token
@@ -31,7 +31,7 @@ grant_type=client_credentials
 &client_secret={client_secret}
 ```
 
-**Ответ:**
+**Response:**
 ```json
 {
   "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -40,7 +40,7 @@ grant_type=client_credentials
 }
 ```
 
-### Общая структура paginated-ответа (list endpoints)
+### General paginated response structure (list endpoints)
 
 ```json
 {
@@ -52,14 +52,14 @@ grant_type=client_credentials
 }
 ```
 
-### Query-параметры для списков
+### Query parameters for list endpoints
 
-| Параметр | Тип | Описание |
+| Parameter | Type | Description |
 |---|---|---|
-| page | number | Номер страницы (default: 1) |
-| pageSize | number | Кол-во записей (default: 50, max: 500) |
-| modifiedOnOrAfter | datetime | Фильтр по дате изменения |
-| active | boolean | Только активные записи |
+| page | number | Page number (default: 1) |
+| pageSize | number | Number of records (default: 50, max: 500) |
+| modifiedOnOrAfter | datetime | Modified date filter |
+| active | boolean | Only active records |
 
 ---
 
@@ -67,11 +67,11 @@ grant_type=client_credentials
 
 ### GET /v2/tenant/:tenantId/appointments
 
-Список записей на обслуживание.
+Service appointment list.
 
 **Query params:** `page`, `pageSize`, `jobId`, `startsOnOrAfter`, `startsOnOrBefore`, `status`
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
   "page": 1,
@@ -113,15 +113,15 @@ grant_type=client_credentials
 }
 ```
 
-**Возможные значения `status`:** `Scheduled`, `Dispatched`, `Working`, `Done`, `Canceled`
+**Possible `status` values:** `Scheduled`, `Dispatched`, `Working`, `Done`, `Canceled`
 
 ---
 
 ### GET /v2/tenant/:tenantId/appointments/:id
 
-Запись по ID.
+Appointment by ID.
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
   "id": 10001,
@@ -144,7 +144,7 @@ grant_type=client_credentials
 
 ### POST /v2/tenant/:tenantId/appointments
 
-Создать запись.
+Create appointment.
 
 **Request body:**
 ```json
@@ -158,7 +158,7 @@ grant_type=client_credentials
 }
 ```
 
-**Пример ответа (201):**
+**Example response (201):**
 ```json
 {
   "id": 10003,
@@ -181,7 +181,7 @@ grant_type=client_credentials
 
 ### PUT /v2/tenant/:tenantId/appointments/:id
 
-Обновить запись.
+Update appointment.
 
 **Request body:**
 ```json
@@ -192,7 +192,7 @@ grant_type=client_credentials
 }
 ```
 
-**Пример ответа (200):** та же структура что у GET /:id
+**Example response (200):** the same structure as GET /:id
 
 ---
 
@@ -200,11 +200,11 @@ grant_type=client_credentials
 
 ### GET /v2/tenant/:tenantId/customers
 
-Список клиентов.
+Customer list.
 
 **Query params:** `page`, `pageSize`, `active`, `modifiedOnOrAfter`, `name`
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
   "page": 1,
@@ -298,20 +298,20 @@ grant_type=client_credentials
 }
 ```
 
-**Возможные значения `type`:** `Residential`, `Commercial`
+**Possible `type` values:** `Residential`, `Commercial`
 
 ---
 
 ### GET /v2/tenant/:tenantId/customers/:id
 
-Клиент по ID.  
-**Пример ответа:** один объект из массива `data` выше (без пагинации).
+Customer by ID.  
+**Example response:** one object from the `data` array above (without pagination).
 
 ---
 
 ### POST /v2/tenant/:tenantId/customers
 
-Создать клиента.
+Create customer.
 
 **Request body:**
 ```json
@@ -338,7 +338,7 @@ grant_type=client_credentials
 }
 ```
 
-**Пример ответа (201):** полный объект клиента с присвоенным `id`.
+**Example response (201):** full customer object with assigned `id`.
 
 ---
 
@@ -346,11 +346,11 @@ grant_type=client_credentials
 
 ### GET /v2/tenant/:tenantId/jobs
 
-Список работ.
+Job list.
 
 **Query params:** `page`, `pageSize`, `status`, `customerId`, `locationId`, `completedOnOrAfter`, `completedOnOrBefore`, `createdOnOrAfter`
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
   "page": 1,
@@ -416,15 +416,15 @@ grant_type=client_credentials
 }
 ```
 
-**Возможные значения `jobStatus`:** `Scheduled`, `InProgress`, `Completed`, `Canceled`, `OnHold`  
-**Возможные значения `priority`:** `Normal`, `High`, `Urgent`
+**Possible `jobStatus` values:** `Scheduled`, `InProgress`, `Completed`, `Canceled`, `OnHold`  
+**Possible `priority` values:** `Normal`, `High`, `Urgent`
 
 ---
 
 ### GET /v2/tenant/:tenantId/jobs/:id
 
-Работа по ID.  
-**Пример ответа:** один объект из массива `data` выше.
+Job by ID.  
+**Example response:** one object from the `data` array above.
 
 ---
 
@@ -432,11 +432,11 @@ grant_type=client_credentials
 
 ### GET /v2/tenant/:tenantId/technicians
 
-Список техников.
+Technician list.
 
 **Query params:** `page`, `pageSize`, `active`, `businessUnitId`
 
-**Пример ответа:**
+**Example response:**
 ```json
 {
   "page": 1,
@@ -474,7 +474,7 @@ grant_type=client_credentials
 
 ---
 
-## Типичные ошибки
+## Common errors
 
 ### 400 Bad Request
 ```json
@@ -522,17 +522,17 @@ grant_type=client_credentials
 
 ---
 
-## Сводка эндпоинтов для seed
+## Seed endpoint summary
 
-| Метод | Путь | Описание | Default Status |
+| Method | Path | Description | Default Status |
 |---|---|---|---|
-| GET | /v2/tenant/:tenantId/appointments | Список записей | 200 |
-| GET | /v2/tenant/:tenantId/appointments/:id | Запись по ID | 200 |
-| POST | /v2/tenant/:tenantId/appointments | Создать запись | 201 |
-| PUT | /v2/tenant/:tenantId/appointments/:id | Обновить запись | 200 |
-| GET | /v2/tenant/:tenantId/customers | Список клиентов | 200 |
-| GET | /v2/tenant/:tenantId/customers/:id | Клиент по ID | 200 |
-| POST | /v2/tenant/:tenantId/customers | Создать клиента | 201 |
-| GET | /v2/tenant/:tenantId/jobs | Список работ | 200 |
-| GET | /v2/tenant/:tenantId/jobs/:id | Работа по ID | 200 |
-| GET | /v2/tenant/:tenantId/technicians | Список техников | 200 |
+| GET | /v2/tenant/:tenantId/appointments | Appointment list | 200 |
+| GET | /v2/tenant/:tenantId/appointments/:id | Appointment by ID | 200 |
+| POST | /v2/tenant/:tenantId/appointments | Create appointment | 201 |
+| PUT | /v2/tenant/:tenantId/appointments/:id | Update appointment | 200 |
+| GET | /v2/tenant/:tenantId/customers | Customer list | 200 |
+| GET | /v2/tenant/:tenantId/customers/:id | Customer by ID | 200 |
+| POST | /v2/tenant/:tenantId/customers | Create customer | 201 |
+| GET | /v2/tenant/:tenantId/jobs | Job list | 200 |
+| GET | /v2/tenant/:tenantId/jobs/:id | Job by ID | 200 |
+| GET | /v2/tenant/:tenantId/technicians | Technician list | 200 |

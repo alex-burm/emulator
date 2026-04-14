@@ -1,28 +1,28 @@
 # Yelp Fusion API — Reference for Emulator
 
-> Источники: docs.developer.yelp.com, scrapfly.io, публичные гайды  
-> Версия API: v3  
-> Используется как шаблон для seed-данных эмулятора
+> Sources: docs.developer.yelp.com, scrapfly.io, public integration guides  
+> API version: v3  
+> Used as a template for emulator seed data
 
 ---
 
-## Обзор
+## Overview
 
 **Base URL:** `https://api.yelp.com`  
-**Версия:** `/v3/...`  
-**Auth:** API Key передаётся как Bearer token
+**Version:** `/v3/...`  
+**Auth:** API Key is passed as a Bearer token
 
-### Обязательные заголовки
+### Required headers
 
 ```http
 Authorization: Bearer {api_key}
 ```
 
-### Ограничения
+### Limits
 
-- Результаты поиска: максимум 50 за раз, максимум 1000 через пагинацию (`offset`)
-- Отзывы: максимум 3 отзыва за один запрос (ограничение Yelp)
-- Rate limit: 5000 запросов/день на бесплатном плане
+- Search results: max 50 per request, max 1000 via pagination (`offset`)
+- Reviews: max 3 reviews per request (Yelp limit)
+- Rate limit: 5000 requests/day on the free plan
 
 ---
 
@@ -30,25 +30,25 @@ Authorization: Bearer {api_key}
 
 ### GET /v3/businesses/search
 
-Поиск бизнесов по локации и/или ключевому слову.
+Search businesses by location and/or keyword.
 
 **Query params:**
 
-| Параметр | Тип | Описание |
+| Parameter | Type | Description |
 |---|---|---|
-| term | string | Поисковой запрос ("pizza", "plumber") |
-| location | string | Текстовое описание локации ("San Francisco, CA") |
-| latitude | float | Широта (альтернатива location) |
-| longitude | float | Долгота (альтернатива location) |
-| radius | int | Радиус поиска в метрах (max: 40000) |
-| categories | string | Категории через запятую ("pizza,bars") |
-| price | string | Ценовой диапазон ("1,2,3") — 1=$, 2=$$, 3=$$$, 4=$$$$ |
-| open_now | boolean | Только открытые сейчас |
+| term | string | Search query ("pizza", "plumber") |
+| location | string | Text location description ("San Francisco, CA") |
+| latitude | float | Latitude (alternative to location) |
+| longitude | float | Longitude (alternative to location) |
+| radius | int | Search radius in meters (max: 40000) |
+| categories | string | Comma-separated categories ("pizza,bars") |
+| price | string | Price range ("1,2,3") — 1=$, 2=$$, 3=$$$, 4=$$$$ |
+| open_now | boolean | Open now only |
 | sort_by | string | best_match / rating / review_count / distance |
-| limit | int | Кол-во результатов (default: 20, max: 50) |
-| offset | int | Смещение для пагинации (default: 0) |
+| limit | int | Number of results (default: 20, max: 50) |
+| offset | int | Pagination offset (default: 0) |
 
-**Пример ответа (200):**
+**Example response (200):**
 ```json
 {
   "businesses": [
@@ -128,7 +128,7 @@ Authorization: Bearer {api_key}
 }
 ```
 
-**Пример пустого результата:**
+**Example empty result:**
 ```json
 {
   "businesses": [],
@@ -148,11 +148,11 @@ Authorization: Bearer {api_key}
 
 ### GET /v3/businesses/:id
 
-Детальная информация по конкретному бизнесу.
+Detailed information for a specific business.
 
-**Path params:** `id` — Yelp business ID или alias
+**Path params:** `id` — Yelp business ID or alias
 
-**Пример ответа (200):**
+**Example response (200):**
 ```json
 {
   "id": "QPOI0dYeAl3U8iPM_IYWnA",
@@ -223,16 +223,16 @@ Authorization: Bearer {api_key}
 
 ### GET /v3/businesses/:id/reviews
 
-Отзывы бизнеса. Возвращает максимум 3 отзыва.
+Business reviews. Returns up to 3 reviews.
 
 **Query params:**
 
-| Параметр | Тип | Описание |
+| Parameter | Type | Description |
 |---|---|---|
-| locale | string | Язык отзывов (default: "en_US") |
+| locale | string | Review language (default: "en_US") |
 | sort_by | string | yelp_sort (default) / newest / oldest / highest_rated / lowest_rated |
 
-**Пример ответа (200):**
+**Example response (200):**
 ```json
 {
   "reviews": [
@@ -287,11 +287,11 @@ Authorization: Bearer {api_key}
 
 ### GET /v3/categories
 
-Список всех доступных категорий Yelp.
+List all available Yelp categories.
 
 **Query params:** `locale` (default: "en_US")
 
-**Пример ответа (200):**
+**Example response (200):**
 ```json
 {
   "categories": [
@@ -340,18 +340,18 @@ Authorization: Bearer {api_key}
 
 ### GET /v3/autocomplete
 
-Подсказки для поиска.
+Search autocomplete suggestions.
 
 **Query params:**
 
-| Параметр | Тип | Описание |
+| Parameter | Type | Description |
 |---|---|---|
-| text | string | Поисковой запрос |
-| latitude | float | Широта для геоконтекста |
-| longitude | float | Долгота для геоконтекста |
-| locale | string | Язык (default: "en_US") |
+| text | string | Search query |
+| latitude | float | Latitude for geocontext |
+| longitude | float | Longitude for geocontext |
+| locale | string | Language (default: "en_US") |
 
-**Пример ответа (200):**
+**Example response (200):**
 ```json
 {
   "terms": [
@@ -374,9 +374,9 @@ Authorization: Bearer {api_key}
 
 ---
 
-## Типичные ошибки
+## Common errors
 
-### 400 Bad Request — отсутствует location или координаты
+### 400 Bad Request — missing location or coordinates
 ```json
 {
   "error": {
@@ -386,7 +386,7 @@ Authorization: Bearer {api_key}
 }
 ```
 
-### 401 Unauthorized — невалидный API key
+### 401 Unauthorized — invalid API key
 ```json
 {
   "error": {
@@ -396,7 +396,7 @@ Authorization: Bearer {api_key}
 }
 ```
 
-### 404 Not Found — бизнес не существует
+### 404 Not Found — business does not exist
 ```json
 {
   "error": {
@@ -418,12 +418,12 @@ Authorization: Bearer {api_key}
 
 ---
 
-## Сводка эндпоинтов для seed
+## Seed endpoint summary
 
-| Метод | Путь | Описание | Default Status |
+| Method | Path | Description | Default Status |
 |---|---|---|---|
-| GET | /v3/businesses/search | Поиск бизнесов | 200 |
-| GET | /v3/businesses/:id | Бизнес по ID | 200 |
-| GET | /v3/businesses/:id/reviews | Отзывы бизнеса | 200 |
-| GET | /v3/categories | Список категорий | 200 |
-| GET | /v3/autocomplete | Автодополнение | 200 |
+| GET | /v3/businesses/search | Business search | 200 |
+| GET | /v3/businesses/:id | Business by ID | 200 |
+| GET | /v3/businesses/:id/reviews | Business reviews | 200 |
+| GET | /v3/categories | Categories list | 200 |
+| GET | /v3/autocomplete | Autocomplete | 200 |
