@@ -122,6 +122,91 @@ export class TypeOrmProviderRepository implements ProviderRepositoryInterface {
         });
     }
 
+    async upsertAllSeedEndpoints(
+        providerSeeds: ProviderSeed[],
+    ): Promise<{ providers: number; inserted: number; updated: number }> {
+        let inserted = 0;
+        let updated = 0;
+        let providers = 0;
+
+        await this.dataSource.transaction(async (manager) => {
+            for (const seed of providerSeeds) {
+                let provider = await manager.findOne(ProviderEntity, {
+                    where: { slug: seed.slug },
+                });
+
+                if (!provider) {
+                    provider = await manager.save(
+                        ProviderEntity,
+                        manager.create(ProviderEntity, {
+                            slug: seed.slug,
+                            name: seed.name,
+                            description: seed.description,
+                            authType: seed.authType,
+                            baseUrl: seed.baseUrl,
+                            defaultHeaders: seed.defaultHeaders,
+                            authConfig: seed.authConfig,
+                        }),
+                    );
+                } else {
+                    await manager.update(ProviderEntity, provider.id, {
+                        name: seed.name,
+                        description: seed.description,
+                        authType: seed.authType,
+                        baseUrl: seed.baseUrl,
+                        defaultHeaders: seed.defaultHeaders,
+                        authConfig: seed.authConfig,
+                    });
+                }
+                providers++;
+
+                const existingEndpoints = await manager.find(
+                    ProviderEndpointEntity,
+                    { where: { providerId: provider.id } },
+                );
+
+                for (const endpoint of seed.endpoints) {
+                    const existing = existingEndpoints.find(
+                        (e) =>
+                            e.method.toUpperCase() ===
+                                endpoint.method.toUpperCase() &&
+                            e.pathPattern === endpoint.pathPattern,
+                    );
+
+                    if (existing) {
+                        await manager.update(
+                            ProviderEndpointEntity,
+                            existing.id,
+                            {
+                                description: endpoint.description,
+                                defaultStatus: endpoint.defaultStatus,
+                                defaultResponse: endpoint.defaultResponse,
+                                defaultHeaders: endpoint.defaultHeaders ?? null,
+                            },
+                        );
+                        updated++;
+                    } else {
+                        await manager.save(
+                            ProviderEndpointEntity,
+                            manager.create(ProviderEndpointEntity, {
+                                providerId: provider.id,
+                                method: endpoint.method,
+                                pathPattern: endpoint.pathPattern,
+                                description: endpoint.description,
+                                defaultStatus: endpoint.defaultStatus,
+                                defaultResponse: endpoint.defaultResponse,
+                                defaultHeaders: endpoint.defaultHeaders,
+                            }),
+                        );
+                        inserted++;
+                    }
+                }
+            }
+        });
+
+        return { providers, inserted, updated };
+    }
+
     async findAll(): Promise<ProviderEntity[]> {
         return this.providerRepository.find({
             order: { id: 'ASC' },

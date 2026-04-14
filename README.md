@@ -1,98 +1,243 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# API Emulator
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+HTTP API emulator for third-party providers (ServiceTitan, Yelp, and custom/default templates).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## What It Does
 
-## Description
+- Stores provider endpoint templates.
+- Creates local projects with unique public hash.
+- Applies per-project conditional rules to endpoint behavior.
+- Serves emulated responses from wildcard route:
+  - `/emulate/{projectHash}/{providerPath...}`
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The emulator supports:
 
-## Project setup
+- JSON and non-JSON responses.
+- Custom status codes and headers.
+- Empty body responses.
+- Simulated delays.
+- Dynamic token placeholders in response payloads.
 
-```bash
-$ npm install
-```
+## Technology (Current Implementation)
 
-## Compile and run the project
+- NestJS
+- TypeORM
+- MySQL
+- CQRS (`@nestjs/cqrs`)
+- Vue 3 CDN frontend in `public/`
 
-```bash
-# development
-$ npm run start
+Architecture is documented to be portable to other backend stacks in [ARCHITECTURE.md](/Users/yandex/ProjectsLocal/freeagency/emulator/ARCHITECTURE.md).
 
-# watch mode
-$ npm run start:dev
+## Local Setup
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+## 1. Install
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
 ```
 
-## Deployment
+## 2. Configure environment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Create `.env` (or copy from `.env.example`):
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```dotenv
+APP_PORT=3000
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=secret
+DB_NAME=emulator
+```
+
+## 3. Run migrations
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm run migration:run
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 4. Start app
 
-## Resources
+```bash
+npm run start:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Frontend:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- `http://localhost:3000/`
 
-## Support
+Management API base:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- `http://localhost:3000/api`
 
-## Stay in touch
+Emulation API base:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- `http://localhost:3000/emulate`
 
-## License
+## Useful Scripts
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+npm run start
+npm run start:dev
+npm run build
+npm run migration:generate -- src/migrations/<Name>
+npm run migration:run
+npm run migration:revert
+```
+
+## API Overview
+
+## Catalog
+
+- `GET /api/providers`
+- `GET /api/providers/:id/endpoints`
+
+## Workspace / Projects
+
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:id`
+- `PATCH /api/projects/:id`
+- `DELETE /api/projects/:id`
+
+## Workspace / Rules
+
+- `GET /api/projects/:id/rules`
+- `POST /api/projects/:id/rules`
+- `PUT /api/projects/:id/rules/:ruleId`
+- `DELETE /api/projects/:id/rules/:ruleId`
+
+## Emulation Runtime
+
+- `ALL /emulate/:hash`
+- `ALL /emulate/:hash/*path`
+
+## Response Envelopes
+
+Management endpoints (`/api/...`):
+
+- Success:
+
+```json
+{
+    "data": {},
+    "meta": {}
+}
+```
+
+- Error:
+
+```json
+{
+    "error": {
+        "statusCode": 404,
+        "message": "...",
+        "path": "/api/...",
+        "timestamp": "2026-04-14T00:00:00.000Z"
+    }
+}
+```
+
+Emulation endpoints (`/emulate/...`):
+
+- Raw status/body/headers are returned directly (no envelope).
+
+## Rule Engine Summary
+
+Condition sources:
+
+- `none`
+- `query_param`
+- `body_field`
+- `header`
+- `path_param`
+
+Condition operators:
+
+- `eq`
+- `contains`
+- `exists`
+- `not_exists`
+- `regex`
+
+First matched enabled rule is applied.
+If no rule matches, endpoint default response is returned.
+
+## Dynamic Template Tokens
+
+Supported in endpoint `defaultResponse` and rule `actionResponse` string values:
+
+- `{{uuid}}`
+- `{{timestamp}}`
+- `{{integer}}`
+
+## Seed Data
+
+Current provider seed packs:
+
+- ServiceTitan
+- Yelp
+- Default Provider (format variability examples)
+
+Seed behavior:
+
+- Idempotent on startup.
+- Sync mode adds missing providers/endpoints when DB already has data.
+
+## Defining Non-JSON / Empty / Timeout-Style Responses
+
+Use endpoint defaults or rule action payloads with explicit headers/status.
+
+Examples:
+
+- Plain text:
+
+```json
+{
+    "defaultStatus": 200,
+    "defaultHeaders": {
+        "Content-Type": "text/plain; charset=utf-8"
+    },
+    "defaultResponse": "pong"
+}
+```
+
+- XML:
+
+```json
+{
+    "defaultStatus": 200,
+    "defaultHeaders": {
+        "Content-Type": "application/xml; charset=utf-8"
+    },
+    "defaultResponse": "<?xml version=\"1.0\"?><root><ok>true</ok></root>"
+}
+```
+
+- Empty body:
+
+```json
+{
+    "defaultStatus": 204,
+    "defaultHeaders": {
+        "Content-Type": "text/plain; charset=utf-8"
+    },
+    "defaultResponse": null
+}
+```
+
+- Timeout-style behavior:
+
+- Set rule `actionDelayMs` (for latency simulation), optionally with `actionStatus=504` and a plain text body.
+
+## Porting to Another Backend Stack
+
+Use these files as canonical references:
+
+- [ARCHITECTURE.md](/Users/yandex/ProjectsLocal/freeagency/emulator/ARCHITECTURE.md)
+- [PLAN.md](/Users/yandex/ProjectsLocal/freeagency/emulator/PLAN.md)
+- [AGENTS.md](/Users/yandex/ProjectsLocal/freeagency/emulator/AGENTS.md)
+
+Porting objective:
+
+- Preserve external contract and runtime behavior.
+- Replace framework/ORM/runtime implementation details only.

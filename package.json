@@ -11,6 +11,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "seed": "ts-node -r tsconfig-paths/register src/bounded-contexts/catalog/presentation/cli/seed.command.ts",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/shared/infrastructure/database/typeorm.config.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infrastructure/database/typeorm.config.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/infrastructure/database/typeorm.config.ts",

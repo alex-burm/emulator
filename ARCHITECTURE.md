@@ -1,251 +1,291 @@
-# API Emulator — Architecture Knowledge Base
+# API Emulator Architecture
 
-> Status: partially implemented
 > Last updated: 2026-04-14
+> Status: active implementation baseline + portability spec
 
----
+## 1. Purpose
 
-## Current Implementation Status
+The service emulates third-party HTTP APIs (for example ServiceTitan, Yelp, and internal/default providers) without calling real upstreams.
 
-- Phase 1 (foundation): completed.
-- Phase 2 (DB schema + migrations): completed.
-- Phase 3 (Catalog BC): completed.
-- Phase 4 (Workspace BC): completed.
-- Phase 5 (Emulation BC): completed.
-- Phase 6 (Frontend): completed.
-- Phase 7: in progress.
+Primary use cases:
 
-Currently working endpoints:
-- `GET /api/providers`
-- `GET /api/providers/:id/endpoints`
-- `GET /api/projects`
-- `POST /api/projects`
-- `GET /api/projects/:id`
-- `DELETE /api/projects/:id`
-- `GET /api/projects/:id/rules`
-- `POST /api/projects/:id/rules`
-- `PUT /api/projects/:id/rules/:ruleId`
-- `DELETE /api/projects/:id/rules/:ruleId`
-- `ALL /emulate/:hash/*path`
+- Develop and test integrations offline.
+- Reproduce upstream contract behavior (status codes, headers, body formats, delays).
+- Simulate happy-path and failure-path scenarios through configurable rules.
 
----
+Core emulation route:
 
-## Project Purpose
-
-The service emulates external APIs (ServiceTitan, Yelp, etc.).
-
-Base emulation route:
-`/emulate/{project-hash}/{...provider-path}`
+- `/emulate/{projectHash}/{providerPath...}`
 
 Example:
-`GET /emulate/a3f9c2/v2/tenant/123/appointments?status=pending`
 
----
+- `GET /emulate/a3f9c2/v2/tenant/123/appointments?pageSize=1`
 
-## Stack
+## 2. Bounded Contexts
 
-| Layer | Technology |
-|---|---|
-| Framework | NestJS 11 |
-| CQRS | `@nestjs/cqrs` |
-| ORM | TypeORM |
-| Database | MySQL |
-| Migrations | TypeORM migrations (`synchronize: false`) |
-| Config | `@nestjs/config` |
-| Validation | `class-validator` + `class-transformer` |
+### Catalog
 
----
+Responsibility:
 
-## Architecture Rules (Current)
+- Provider registry.
+- Provider endpoint templates.
+- Seed-driven source for available external API shapes.
 
-- Module layers: `domain` → `application` → `infrastructure` → `presentation`.
-- `application` must not import `presentation`.
-- Repository contracts are declared in `domain/repositories`; implementations are in `infrastructure/persistence`.
-- `application` injects repositories via domain ports (DI tokens), not concrete TypeORM classes.
-- Entity files are in `domain` and used directly by TypeORM.
-- For 1:1 CRUD, avoid duplicate `domain entity` and `persistence entity` models.
-- CQRS structure:
-  - `application/queries/<query-name>/...`
-  - `application/commands/<command-name>/...`
-- One handler per file.
+Owns:
 
----
+- `Provider`
+- `ProviderEndpoint`
 
-## Bounded Contexts
+### Workspace
 
-### 1) Catalog BC
+Responsibility:
 
-**Responsibility:** provider registry and provider endpoint templates (seed + read-only queries).
+- User projects and stable project hash.
+- Per-project endpoint rules overriding provider defaults.
 
-**Implemented:**
-- idempotent ServiceTitan and Yelp seed on startup
-- `ListProvidersQuery`
-- `GetProviderWithEndpointsQuery`
-- HTTP controller for reading catalog data
+Owns:
 
-### 2) Workspace BC
+- `Project`
+- `EndpointRule`
+- Rule condition value objects/enums.
 
-**Responsibility:** projects, hash, and project-specific endpoint rules.
+### Emulation
 
-**Status:** implemented (project/rule CRUD, query/command handlers, HTTP controllers).
+Responsibility:
 
-### 3) Emulation BC
+- Runtime request resolution by project hash + method + path.
+- Rule evaluation.
+- Final HTTP response construction and return.
 
-**Responsibility:** handle `ALL /emulate/:hash/*path`, select endpoint, apply rules, build response.
+Owns:
 
-**Status:** implemented.
-**Approach:** `presentation/http` wildcard controller + use case, no middleware business logic.
+- Matching/evaluation/build services.
+- Emulate use case.
 
----
+## 3. Layering and Dependency Direction
 
-## Current File Structure
+Each bounded context follows:
 
-```text
-src/
-├── bounded-contexts/
-│   ├── catalog/
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── infrastructure/
-│   │   └── presentation/
-│   ├── workspace/
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── infrastructure/
-│   │   └── presentation/
-│   └── emulation/
-│       ├── domain/
-│       ├── application/
-│       └── presentation/
-├── migrations/
-├── shared/
-├── app.module.ts
-└── main.ts
-```
+- `domain`
+- `application`
+- `infrastructure`
+- `presentation`
 
----
+Dependency rules:
 
-## Database (Current)
+- `domain` is independent.
+- `application` depends on domain contracts/models only.
+- `infrastructure` implements domain/application contracts.
+- `presentation` calls application and handles transport concerns.
 
-Created tables:
+Hard rule:
+
+- `application` never imports `presentation`.
+
+## 4. Domain Model (Current)
+
+### Catalog
+
+- `Provider` (slug, name, auth metadata, base URL, defaults)
+- `ProviderEndpoint` (method, path pattern, default status/body/headers)
+
+### Workspace
+
+- `Project` (name, providerId, hash)
+- `EndpointRule` (condition + action)
+- `ProjectHash` VO (hash generation/format)
+- `RuleConditionSource` enum
+- `RuleConditionOperator` enum
+- `RuleCondition` VO for rule validation consistency
+
+### Emulation
+
+Domain services:
+
+- `PathMatcherService`
+- `RuleEvaluatorService`
+- `ResponseBuilderService`
+
+## 5. Persistence and Schema
+
+Current relational schema tables:
+
 - `providers`
 - `provider_endpoints`
 - `projects`
 - `endpoint_rules`
 - `migrations`
 
-Key notes:
-- FKs and indexes are applied by migration `1776113869684-InitSchema.ts`.
-- Composite index exists on `endpoint_rules(project_id, provider_endpoint_id, priority)`.
+Important constraints/indexes:
 
----
+- `projects.hash` unique.
+- FK: `provider_endpoints.provider_id -> providers.id`.
+- FK: `projects.provider_id -> providers.id`.
+- FK: `endpoint_rules.project_id -> projects.id`.
+- FK: `endpoint_rules.provider_endpoint_id -> provider_endpoints.id`.
+- Index on `(project_id, provider_endpoint_id, priority)` for rule retrieval order.
 
-## Current Catalog Data Flow
+Portability rule:
 
-### `GET /api/providers`
+- Keep table/column semantics stable across backend stacks.
+- Changing ORM or framework must not change external API contract.
 
-1. `CatalogController` sends `ListProvidersQuery` via `QueryBus`.
-2. `ListProvidersHandler` reads via `ProviderRepository.findAll()`.
-3. Result returns as `ListProvidersResultItem[]`.
-4. `ResponseEnvelopeInterceptor` wraps into `{ data, meta }`.
+## 6. Transport Contracts
 
-### `GET /api/providers/:id/endpoints`
+## 6.1 Management API (`/api/...`)
 
-1. `CatalogController` sends `GetProviderWithEndpointsQuery`.
-2. `GetProviderWithEndpointsHandler` calls `ProviderRepository.findByIdWithEndpoints()`.
-3. If provider is missing, throws `NotFoundException`.
-4. Result returns as `GetProviderWithEndpointsResult`.
-5. `ResponseEnvelopeInterceptor` wraps into `{ data, meta }`.
+Global behavior:
 
----
+- Validation enabled.
+- Success envelope:
+  - `{ "data": ..., "meta": {} }`
+- Error envelope:
+  - `{ "error": { "statusCode", "message", "path", "timestamp" } }`
 
-## Migrations
+Main endpoints:
 
-Scripts:
+- `GET /api/providers`
+- `GET /api/providers/:id/endpoints`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:id`
+- `PATCH /api/projects/:id`
+- `DELETE /api/projects/:id`
+- `GET /api/projects/:id/rules`
+- `POST /api/projects/:id/rules`
+- `PUT /api/projects/:id/rules/:ruleId`
+- `DELETE /api/projects/:id/rules/:ruleId`
 
-```json
-{
-  "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/shared/infrastructure/database/typeorm.config.ts",
-  "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infrastructure/database/typeorm.config.ts",
-  "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/infrastructure/database/typeorm.config.ts"
-}
-```
+## 6.2 Emulation API (`/emulate/...`)
 
-`typeorm.config.ts` uses entity glob discovery in `domain/**`.
+Route(s):
 
----
+- `ALL /emulate/:hash`
+- `ALL /emulate/:hash/*path`
 
-## Auth Emulation (Auth Endpoints)
+Behavior:
 
-### Approach
+- No success envelope wrapper.
+- Returns raw status/body/headers from emulation engine.
+- Supports JSON and non-JSON responses (`text/plain`, `application/xml`, `text/html`, empty body, etc).
 
-Provider auth endpoints (for example, `POST /connect/token` for ServiceTitan) are regular `provider_endpoint` seed records.
-No new tables and no special middleware are required.
-Runtime flow: `EmulationController` → `EmulateUseCase` → `PathMatcher` / `RuleEvaluator` / `ResponseBuilder`.
+## 7. Emulation Runtime Algorithm
 
-Subsequent token validation is intentionally not implemented.
-The emulator is stateless and responds based on rules.
+Input:
 
-### Marking auth endpoints
+- project hash
+- HTTP method
+- request path
+- query/body/headers
 
-`is_auth_endpoint: boolean` on `ProviderEndpoint` is UI metadata only.
-It allows visual separation of auth routes from business routes.
+Steps:
 
-### Dynamic token via templates
+1. Load `Project` by hash.
+2. Load provider endpoints by `project.providerId`.
+3. Normalize incoming path.
+4. Find first endpoint with matching method and matching path pattern.
+5. Load project rules for `(projectId, providerEndpointId)` ordered by priority/order.
+6. Evaluate rules sequentially and select first matched enabled rule.
+7. If matched rule has delay, wait `actionDelayMs`.
+8. Build response:
+   - status: `rule.actionStatus` or `endpoint.defaultStatus`
+   - body: `rule.actionResponse` (if provided) or `endpoint.defaultResponse`
+   - headers: `endpoint.defaultHeaders` (fallback JSON header)
+9. Apply template tokens in string values (`{{uuid}}`, `{{timestamp}}`, `{{integer}}`).
+10. If `actionRandom=true`, randomize values while preserving shape.
+11. Return final response to controller and then to HTTP client.
 
-`ResponseBuilder` supports template placeholders in `default_response` / `action_response`:
+## 8. Rule Evaluation Semantics
 
-| Placeholder | Result |
-|---|---|
-| `{{uuid}}` | `crypto.randomUUID()` |
-| `{{timestamp}}` | current ISO timestamp |
-| `{{integer}}` | random integer 1–9999 |
+Condition sources:
 
-ServiceTitan auth endpoint example in seed:
+- `none`
+- `query_param`
+- `body_field`
+- `header`
+- `path_param`
 
-```json
-{
-  "method": "POST",
-  "path_pattern": "/connect/token",
-  "is_auth_endpoint": true,
-  "default_status": 200,
-  "default_response": {
-    "access_token": "{{uuid}}",
-    "expires_in": 3600,
-    "token_type": "Bearer"
-  }
-}
-```
+Condition operators:
 
-Each `POST /emulate/a3f9c2/connect/token` call returns a fresh UUID.
-Client behavior remains production-like.
+- `eq`
+- `contains`
+- `exists`
+- `not_exists`
+- `regex`
 
-### Testing invalid token scenario
+Evaluation notes:
 
-Implemented via a regular `EndpointRule`, for example:
+- Disabled rule is always ignored.
+- `none` means unconditional match.
+- Missing key/operator for non-`none` condition means no match.
+- Body/query nested field access supports dot-path (`a.b.c`).
+- Header lookup is case-insensitive (`lowercase`).
+- Invalid regex pattern is treated as no match.
 
-```text
-condition_source:   header
-condition_key:      authorization
-condition_operator: not_exists
-action_status:      401
-action_response:    { "error": "Unauthorized", "message": "Bearer token is missing" }
-priority:           1
-```
+## 9. Seed Strategy
 
-### `auth_config` on Provider
+Seed model:
 
-Used as UI metadata only, not runtime logic.
+- Providers and endpoints are defined in code as static seed documents.
+- Seed is idempotent.
+- If DB is not empty, sync mode adds missing providers/endpoints without dropping user data.
 
-### Yelp and providers without OAuth
+Current seed packs:
 
-For API-key providers like Yelp, no auth endpoint is required.
-Key is passed statically via headers, and `auth_config` documents this for the UI.
+- `servicetitan`
+- `yelp`
+- `default` (response variability examples: plain, xml, html, empty, timeout style)
 
----
+## 10. Portability Blueprint (Language/Framework Agnostic)
 
-## Next Steps
+To rebuild this backend in another stack:
 
-1. Complete Phase 7 edge-case hardening and regression checks.
-2. Finalize `README.md` with runbook and provider extension flow.
-3. Do final documentation pass for full code/document parity.
+1. Preserve bounded contexts and use cases, not Nest-specific modules.
+2. Recreate the same relational schema and constraints.
+3. Keep the same HTTP contract and payload envelopes.
+4. Implement equivalent request validation.
+5. Implement equivalent wildcard emulation route semantics.
+6. Preserve deterministic rule evaluation order.
+7. Preserve token templating and randomization behavior.
+8. Preserve seed idempotency and sync behavior.
+
+Mapping guide:
+
+- Nest controller -> HTTP handler/router in target framework.
+- CQRS handlers -> use case/application services.
+- Repository interfaces -> ports/contracts.
+- TypeORM repositories -> adapter implementations for target ORM/driver.
+- Global filters/interceptors -> middleware/hooks that produce same output shape.
+
+## 11. ADR-Style Decisions (Current)
+
+- Unified entity model is accepted for current CRUD scope (no duplicated domain/persistence entities).
+- `ProjectAggregate` is intentionally deferred until real cross-rule transactional invariants appear.
+- Emulation business logic lives in use case/domain services, not middleware.
+- Query results can be returned directly by controllers when transport contract is identical.
+
+## 12. Extension Rules
+
+When adding a provider:
+
+1. Add provider metadata and endpoints in seed file.
+2. Keep realistic default headers and response shapes.
+3. Add auth endpoint only when provider actually requires one.
+4. Use `isAuthEndpoint` as UI metadata only.
+5. Do not add runtime token persistence unless a real scenario demands it.
+
+When adding new rule semantics:
+
+1. Extend source/operator enum.
+2. Extend evaluator service with deterministic behavior.
+3. Add tests for success/failure edge cases.
+4. Keep backward compatibility for existing rules.
+
+## 13. Non-Goals (Current Stage)
+
+- Full OAuth lifecycle/token store.
+- Multi-tenant auth/access model.
+- Event sourcing.
+- Distributed consistency patterns.
+
+These are postponed intentionally to keep emulator behavior fast and deterministic.
