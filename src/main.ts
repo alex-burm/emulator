@@ -1,3 +1,4 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './shared/presentation/filters/global-exception.filter';
@@ -6,6 +7,13 @@ import { ResponseEnvelopeInterceptor } from './shared/presentation/interceptors/
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.setGlobalPrefix('api');
+    app.useGlobalPipes(
+        new ValidationPipe({
+            transform: true,
+            whitelist: true,
+            forbidNonWhitelisted: true,
+        }),
+    );
     app.useGlobalFilters(new GlobalExceptionFilter());
     app.useGlobalInterceptors(new ResponseEnvelopeInterceptor());
 

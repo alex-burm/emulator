@@ -81,4 +81,22 @@ export class TypeOrmProviderRepository implements ProviderRepositoryInterface {
 
         return provider;
     }
+
+    async existsById(id: number): Promise<boolean> {
+        const count = await this.providerRepository.count({ where: { id } });
+        return count > 0;
+    }
+
+    async findEndpointById(id: number): Promise<ProviderEndpointEntity | null> {
+        return this.providerEndpointRepository.findOne({ where: { id } });
+    }
+
+    async findEndpointsByProviderId(
+        providerId: number,
+    ): Promise<ProviderEndpointEntity[]> {
+        return this.providerEndpointRepository.find({
+            where: { providerId },
+            order: { id: 'ASC' },
+        });
+    }
 }

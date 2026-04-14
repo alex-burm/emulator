@@ -7,23 +7,10 @@ import {
     ManyToOne,
     PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ProviderEndpointEntity } from '../../catalog/domain/entity/provider-endpoint.entity';
 import { ProjectEntity } from './project.entity';
-
-export enum RuleConditionSource {
-    NONE = 'none',
-    QUERY_PARAM = 'query_param',
-    BODY_FIELD = 'body_field',
-    HEADER = 'header',
-    PATH_PARAM = 'path_param',
-}
-
-export enum RuleConditionOperator {
-    EQ = 'eq',
-    CONTAINS = 'contains',
-    EXISTS = 'exists',
-    NOT_EXISTS = 'not_exists',
-    REGEX = 'regex',
-}
+import { RuleConditionOperator } from './value-objects/rule-condition-operator.enum';
+import { RuleConditionSource } from './value-objects/rule-condition-source.enum';
 
 @Entity({ name: 'endpoint_rules' })
 @Index('IDX_endpoint_rules_project_endpoint_priority', [
@@ -114,10 +101,10 @@ export class EndpointRuleEntity {
     @JoinColumn({ name: 'project_id' })
     project!: ProjectEntity;
 
-    @ManyToOne('ProviderEndpointEntity', {
+    @ManyToOne(() => ProviderEndpointEntity, {
         onDelete: 'RESTRICT',
         onUpdate: 'CASCADE',
     })
     @JoinColumn({ name: 'provider_endpoint_id' })
-    providerEndpoint!: unknown;
+    providerEndpoint!: ProviderEndpointEntity;
 }

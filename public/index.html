@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Emulator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #f1f5f9;
+      --surface:       #ffffff;
+      --surface-2:     #f8fafc;
+      --border:        #e2e8f0;
+      --text:          #0f172a;
+      --text-2:        #475569;
+      --text-3:        #94a3b8;
+      --primary:       #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-light: #eef2ff;
+      --danger:        #ef4444;
+      --danger-hover:  #dc2626;
+      --success:       #22c55e;
+      --radius:        8px;
+      --radius-lg:     12px;
+      --shadow:        0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+      --shadow-lg:     0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: var(--shadow);
+    }
+    .app-logo { font-size: 15px; font-weight: 700; color: var(--primary); letter-spacing: -.3px; }
+    .app-logo span { color: var(--text-2); font-weight: 400; }
+    .header-sep { color: var(--border); }
+
+    /* ── Page ── */
+    .page { max-width: 1080px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── Typography ── */
+    .page-title   { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .page-sub     { color: var(--text-2); margin-bottom: 24px; }
+    .label-caps   { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); margin-bottom: 8px; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      border: 1px solid transparent; transition: all .15s;
+      white-space: nowrap; font-family: inherit;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary  { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover:not(:disabled)   { background: var(--primary-hover); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-2); }
+    .btn-danger   { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .btn-danger:hover:not(:disabled)    { background: var(--danger-hover); }
+    .btn-ghost    { background: transparent; color: var(--text-2); border-color: transparent; }
+    .btn-ghost:hover:not(:disabled)     { background: var(--surface-2); color: var(--text); }
+    .btn-sm  { padding: 4px 10px; font-size: 12px; }
+    .btn-icon { padding: 5px 7px; }
+
+    /* ── Projects grid ── */
+    .row-between { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+
+    .project-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 20px;
+      cursor: pointer; transition: all .15s; box-shadow: var(--shadow);
+    }
+    .project-card:hover { border-color: var(--primary); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    .project-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .project-name { font-size: 15px; font-weight: 600; }
+    .project-meta { display: flex; flex-direction: column; gap: 6px; }
+    .project-meta-row { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 12px; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    }
+    .badge-provider { background: var(--primary-light); color: var(--primary); }
+    .badge-auth     { background: #fef3c7; color: #92400e; font-size: 10px; }
+
+    .mono {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      padding: 2px 7px; border-radius: 4px; color: var(--text-2);
+    }
+
+    .method-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 54px; padding: 2px 6px; border-radius: 4px;
+      font-size: 11px; font-weight: 700; font-family: monospace; flex-shrink: 0;
+    }
+    .method-get    { background: #dcfce7; color: #15803d; }
+    .method-post   { background: #e0e7ff; color: #4338ca; }
+    .method-put    { background: #fef3c7; color: #b45309; }
+    .method-patch  { background: #ffedd5; color: #c2410c; }
+    .method-delete { background: #fee2e2; color: #b91c1c; }
+
+    /* ── Detail header ── */
+    .detail-header {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    .detail-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .detail-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .detail-badges { display: flex; align-items: center; gap: 8px; }
+
+    .url-row {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 8px 10px;
+    }
+    .url-row code { font-family: 'SF Mono', monospace; font-size: 12px; color: var(--text-2); flex: 1; word-break: break-all; }
+
+    /* ── Endpoints ── */
+    .endpoints { display: flex; flex-direction: column; gap: 10px; }
+
+    .ep-block {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow);
+    }
+    .ep-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 16px; cursor: pointer; transition: background .12s;
+      border-bottom: 1px solid transparent;
+    }
+    .ep-head:hover { background: var(--surface-2); }
+    .ep-head.is-open { border-bottom-color: var(--border); }
+    .ep-path { font-family: 'SF Mono', monospace; font-size: 12px; flex: 1; }
+    .ep-desc { font-size: 12px; color: var(--text-3); }
+    .ep-chevron { color: var(--text-3); font-size: 11px; transition: transform .18s; flex-shrink: 0; }
+    .ep-chevron.open { transform: rotate(180deg); }
+
+    .ep-body { padding: 16px; }
+    .ep-url-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .ep-url-row { margin-bottom: 16px; }
+
+    /* ── Rules ── */
+    .rules-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .rules-list { display: flex; flex-direction: column; gap: 7px; }
+
+    .rule-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--surface-2);
+      cursor: pointer; transition: all .12s;
+    }
+    .rule-item:hover { border-color: var(--primary); background: var(--primary-light); }
+    .rule-item.is-disabled { opacity: .5; }
+    .rule-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--border); color: var(--text-2);
+      font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .rule-name { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rule-tags { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 11px; padding: 2px 6px; border-radius: 4px;
+      background: var(--border); color: var(--text-2); white-space: nowrap;
+    }
+    .tag-cond   { background: #ede9fe; color: #7c3aed; }
+    .tag-delay  { background: #fef3c7; color: #b45309; }
+    .tag-err    { background: #fee2e2; color: #b91c1c; }
+    .tag-ok     { background: #dcfce7; color: #15803d; }
+    .tag-random { background: #f0fdf4; color: #16a34a; }
+    .tag-custom { background: #ede9fe; color: #7c3aed; }
+
+    .empty-rules {
+      text-align: center; padding: 18px;
+      color: var(--text-3); font-size: 13px;
+      border: 1px dashed var(--border); border-radius: var(--radius);
+    }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 16px;
+    }
+    .modal {
+      background: var(--surface); border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg); width: 100%; max-width: 520px;
+      max-height: 90vh; display: flex; flex-direction: column;
+      animation: fadeUp .15s ease-out;
+    }
+    .modal-lg { max-width: 620px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px) scale(.97); }
+      to   { opacity: 1; transform: none; }
+    }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 0; flex-shrink: 0; }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .modal-foot {
+      padding: 14px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    }
+    .spacer { flex: 1; }
+
+    /* ── Forms ── */
+    .fgroup { margin-bottom: 14px; }
+    .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .flabel { display: block; font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 4px; }
+    .finput {
+      width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 13px; font-family: inherit;
+      background: var(--surface); color: var(--text); outline: none; transition: border-color .12s;
+    }
+    .finput:focus { border-color: var(--primary); }
+    .finput.is-error { border-color: var(--danger); }
+    .finput:disabled { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+    select.finput { cursor: pointer; }
+    textarea.finput { resize: vertical; font-family: 'SF Mono', monospace; font-size: 12px; min-height: 90px; }
+    .fhint  { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+    .ferror { font-size: 11px; color: var(--danger);  margin-top: 3px; }
+
+    .fsec { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
+    .fsec:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .fsec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); margin-bottom: 10px; }
+
+    /* ── Toggle ── */
+    .trow { display: flex; align-items: center; justify-content: space-between; }
+    .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; display: inline-block; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .tslider { position: absolute; inset: 0; background: var(--border); border-radius: 20px; transition: .18s; }
+    .tslider::before {
+      content: ''; position: absolute; width: 14px; height: 14px;
+      border-radius: 50%; background: white; left: 3px; top: 3px; transition: .18s;
+      box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    }
+    .toggle input:checked + .tslider { background: var(--primary); }
+    .toggle input:checked + .tslider::before { transform: translateX(16px); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 11px 16px; border-radius: var(--radius);
+      font-size: 13px; font-weight: 500; color: #fff;
+      box-shadow: var(--shadow-lg); z-index: 200; animation: fadeUp .18s ease-out;
+    }
+    .toast-success { background: #16a34a; }
+    .toast-error   { background: var(--danger); }
+
+    /* ── Empty / Loading ── */
+    .empty-state { text-align: center; padding: 72px 24px; }
+    .empty-icon  { font-size: 44px; margin-bottom: 14px; }
+    .empty-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+    .empty-sub   { color: var(--text-2); margin-bottom: 22px; }
+
+    .spinner {
+      width: 22px; height: 22px; border: 2px solid var(--border);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin .6s linear infinite; margin: 48px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="app-logo">API <span>Emulator</span></div>
+    <span v-if="view === 'detail'" class="header-sep">›</span>
+    <span v-if="view === 'detail'" style="font-size:13px; color: var(--text-2);">{{ currentProject?.name }}</span>
+  </header>
+
+  <!-- ── Toast ── -->
+  <div v-if="toast.show" class="toast" :class="`toast-${toast.type}`">{{ toast.message }}</div>
+
+  <!-- ════════════════════════════════════
+       VIEW: PROJECTS LIST
+  ════════════════════════════════════ -->
+  <div v-if="view === 'list'" class="page">
+    <div class="row-between">
+      <div>
+        <div class="page-title">Projects</div>
+        <div class="page-sub">Each project emulates one provider under a unique URL</div>
+      </div>
+      <button class="btn btn-primary" @click="openCreateModal">+ New Project</button>
+    </div>
+
+    <div v-if="loading" class="spinner"></div>
+
+    <div v-else-if="projects.length === 0" class="empty-state">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-title">No projects yet</div>
+      <div class="empty-sub">Create a project to start emulating an API provider</div>
+      <button class="btn btn-primary" @click="openCreateModal">Create first project</button>
+    </div>
+
+    <div v-else class="projects-grid">
+      <div
+        v-for="p in projects" :key="p.id"
+        class="project-card"
+        @click="navigateToProject(p)"
+      >
+        <div class="project-card-top">
+          <div class="project-name">{{ p.name }}</div>
+          <span class="badge badge-provider">{{ p.provider?.name }}</span>
+        </div>
+        <div class="project-meta">
+          <div class="project-meta-row">
+            <span style="font-size:12px">🔑</span>
+            <code class="mono">{{ p.hash }}</code>
+          </div>
+          <div class="project-meta-row">
+            <span style="font-size:12px">📅</span>
+            <span>{{ fmtDate(p.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       VIEW: PROJECT DETAIL
+  ════════════════════════════════════ -->
+  <div v-if="view === 'detail'" class="page">
+    <div style="margin-bottom: 18px">
+      <button class="btn btn-ghost btn-sm" @click="backToList">← Projects</button>
+    </div>
+
+    <div v-if="loading" class="spinner"></div>
+
+    <template v-else-if="currentProject">
+
+      <!-- Project header card -->
+      <div class="detail-header">
+        <div class="detail-top">
+          <div style="flex:1">
+            <div class="detail-title">{{ currentProject.name }}</div>
+            <div class="detail-badges" style="margin-bottom:14px">
+              <span class="badge badge-provider">{{ currentProject.provider?.name }}</span>
+              <code class="mono">{{ currentProject.hash }}</code>
+            </div>
+            <div class="ep-url-label">Base emulator URL</div>
+            <div class="url-row">
+              <code>{{ baseUrl(currentProject.hash) }}</code>
+              <button class="btn btn-ghost btn-icon btn-sm" title="Copy" @click="copy(baseUrl(currentProject.hash))">⧉</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="color: var(--danger)" @click="confirmDeleteProject">Delete</button>
+        </div>
+      </div>
+
+      <!-- Endpoints -->
+      <div class="label-caps">Provider Endpoints — {{ currentProject.endpoints?.length ?? 0 }}</div>
+      <div class="endpoints">
+        <div v-for="ep in currentProject.endpoints" :key="ep.id" class="ep-block">
+
+          <!-- Endpoint row (toggle) -->
+          <div
+            class="ep-head"
+            :class="{ 'is-open': opened.has(ep.id) }"
+            @click="toggleEp(ep.id)"
+          >
+            <span :class="`method-badge method-${ep.method.toLowerCase()}`">{{ ep.method }}</span>
+            <span class="ep-path">{{ ep.pathPattern }}</span>
+            <span v-if="ep.isAuthEndpoint" class="badge badge-auth" style="margin-right:4px">auth</span>
+            <span class="ep-desc">{{ ep.description }}</span>
+            <span class="ep-chevron" :class="{ open: opened.has(ep.id) }">▼</span>
+          </div>
+
+          <!-- Expanded body -->
+          <div v-if="opened.has(ep.id)" class="ep-body">
+
+            <!-- Emulator URL -->
+            <div class="ep-url-row">
+              <div class="ep-url-label">Emulator URL</div>
+              <div class="url-row">
+                <code>{{ ep.method }} {{ emulatorUrl(currentProject.hash, ep.pathPattern) }}</code>
+                <button class="btn btn-ghost btn-icon btn-sm" title="Copy" @click="copy(emulatorUrl(currentProject.hash, ep.pathPattern))">⧉</button>
+              </div>
+            </div>
+
+            <!-- Rules -->
+            <div class="rules-head">
+              <div class="label-caps" style="margin-bottom:0">Rules ({{ ep.rules?.length ?? 0 }})</div>
+              <button class="btn btn-primary btn-sm" @click="openAddRule(ep)">+ Add Rule</button>
+            </div>
+
+            <div v-if="!ep.rules?.length" class="empty-rules">
+              No rules — provider default response will be returned
+            </div>
+            <div v-else class="rules-list">
+              <div
+                v-for="r in sorted(ep.rules)" :key="r.id"
+                class="rule-item"
+                :class="{ 'is-disabled': !r.isEnabled }"
+                @click="openEditRule(ep, r)"
+              >
+                <div class="rule-num">{{ r.priority }}</div>
+                <div class="rule-name">{{ r.name }}</div>
+                <div class="rule-tags">
+                  <span v-if="condStr(r)" class="tag tag-cond">{{ condStr(r) }}</span>
+                  <span v-if="r.actionDelayMs > 0" class="tag tag-delay">⏱ {{ r.actionDelayMs }}ms</span>
+                  <span
+                    v-if="r.actionStatus"
+                    class="tag"
+                    :class="r.actionStatus < 400 ? 'tag-ok' : 'tag-err'"
+                  >→ {{ r.actionStatus }}</span>
+                  <span v-if="r.actionRandom" class="tag tag-random">🎲 random</span>
+                  <span v-else-if="r.actionResponse" class="tag tag-custom">custom body</span>
+                  <span v-if="!r.isEnabled" class="tag">off</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- ════════════════════════════════════
+       MODAL: CREATE PROJECT
+  ════════════════════════════════════ -->
+  <div v-if="cm.open" class="overlay" @click.self="cm.open = false">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="modal-title">New Project</div>
+        <button class="btn btn-ghost btn-icon" @click="cm.open = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="fgroup">
+          <label class="flabel">Project Name</label>
+          <input
+            v-model="cm.name" class="finput" :class="{ 'is-error': cm.err.name }"
+            placeholder="e.g. ST Integration Test"
+            @keydown.enter="submitCreate"
+          />
+          <div v-if="cm.err.name" class="ferror">{{ cm.err.name }}</div>
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Provider</label>
+          <select v-model="cm.providerId" class="finput" :class="{ 'is-error': cm.err.providerId }">
+            <option :value="null" disabled>Select a provider…</option>
+            <option v-for="p in providers" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+          <div v-if="cm.err.providerId" class="ferror">{{ cm.err.providerId }}</div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" @click="cm.open = false">Cancel</button>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" :disabled="cm.busy" @click="submitCreate">
+          {{ cm.busy ? 'Creating…' : 'Create' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════
+       MODAL: RULE
+  ════════════════════════════════════ -->
+  <div v-if="rm.open" class="overlay" @click.self="rm.open = false">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <div class="modal-title">{{ rm.mode === 'create' ? 'Add Rule' : 'Edit Rule' }}</div>
+        <button class="btn btn-ghost btn-icon" @click="rm.open = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- General -->
+        <div class="fsec">
+          <div class="fsec-title">General</div>
+          <div class="frow">
+            <div class="fgroup" style="margin-bottom:0">
+              <label class="flabel">Name</label>
+              <input v-model="rm.f.name" class="finput" :class="{ 'is-error': rm.err.name }" placeholder="e.g. Empty list for pending" />
+              <div v-if="rm.err.name" class="ferror">{{ rm.err.name }}</div>
+            </div>
+            <div class="fgroup" style="margin-bottom:0">
+              <label class="flabel">Priority</label>
+              <input v-model.number="rm.f.priority" type="number" min="1" class="finput" />
+              <div class="fhint">Lower number = checked first</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Condition -->
+        <div class="fsec">
+          <div class="fsec-title">Condition — when to trigger</div>
+          <div class="fgroup">
+            <label class="flabel">Match on</label>
+            <select v-model="rm.f.conditionSource" class="finput">
+              <option value="none">Always (catch-all, no condition)</option>
+              <option value="query_param">Query Parameter</option>
+              <option value="body_field">Body Field (dot-notation)</option>
+              <option value="header">Header</option>
+              <option value="path_param">Path Parameter</option>
+            </select>
+          </div>
+          <template v-if="rm.f.conditionSource !== 'none'">
+            <div class="frow">
+              <div class="fgroup" style="margin-bottom:0">
+                <label class="flabel">{{ condKeyLabel(rm.f.conditionSource) }}</label>
+                <input
+                  v-model="rm.f.conditionKey" class="finput" :class="{ 'is-error': rm.err.conditionKey }"
+                  :placeholder="condKeyPlaceholder(rm.f.conditionSource)"
+                />
+                <div v-if="rm.err.conditionKey" class="ferror">{{ rm.err.conditionKey }}</div>
+              </div>
+              <div class="fgroup" style="margin-bottom:0">
+                <label class="flabel">Operator</label>
+                <select v-model="rm.f.conditionOperator" class="finput">
+                  <option value="eq">equals</option>
+                  <option value="contains">contains</option>
+                  <option value="exists">exists (any value)</option>
+                  <option value="not_exists">not exists</option>
+                  <option value="regex">matches regex</option>
+                </select>
+              </div>
+            </div>
+            <div v-if="!['exists','not_exists'].includes(rm.f.conditionOperator)" class="fgroup" style="margin-top:10px; margin-bottom:0">
+              <label class="flabel">Value</label>
+              <input v-model="rm.f.conditionValue" class="finput" placeholder="e.g. pending" />
+            </div>
+          </template>
+        </div>
+
+        <!-- Action -->
+        <div class="fsec">
+          <div class="fsec-title">Action — what to return</div>
+          <div class="frow" style="margin-bottom:10px">
+            <div class="fgroup" style="margin-bottom:0">
+              <label class="flabel">Delay (ms)</label>
+              <input v-model.number="rm.f.actionDelayMs" type="number" min="0" class="finput" placeholder="0" />
+              <div class="fhint">0 = immediate</div>
+            </div>
+            <div class="fgroup" style="margin-bottom:0">
+              <label class="flabel">HTTP Status override</label>
+              <input v-model.number="rm.f.actionStatus" type="number" class="finput" placeholder="leave empty = provider default" />
+            </div>
+          </div>
+          <div class="fgroup" style="margin-bottom:8px">
+            <div class="trow">
+              <div>
+                <div class="flabel" style="margin-bottom:1px">Randomize response</div>
+                <div class="fhint">Keeps structure, randomizes values</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" v-model="rm.f.actionRandom" />
+                <span class="tslider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="fgroup" style="margin-bottom:0">
+            <label class="flabel">Response Body (JSON)</label>
+            <textarea
+              v-model="rm.f.responseRaw" class="finput" :class="{ 'is-error': rm.err.responseRaw }"
+              :disabled="rm.f.actionRandom"
+              placeholder='Leave empty to use provider default&#10;&#10;{"data": [], "total": 0}'
+            ></textarea>
+            <div v-if="rm.err.responseRaw" class="ferror">{{ rm.err.responseRaw }}</div>
+            <div v-else-if="rm.f.actionRandom" class="fhint">Disabled — random mode is active</div>
+          </div>
+        </div>
+
+        <!-- Enabled -->
+        <div class="fsec">
+          <div class="trow">
+            <div>
+              <div class="flabel" style="margin-bottom:1px">Rule Enabled</div>
+              <div class="fhint">Disabled rules are skipped</div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" v-model="rm.f.isEnabled" />
+              <span class="tslider"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-foot">
+        <button v-if="rm.mode === 'edit'" class="btn btn-danger btn-sm" :disabled="rm.busy" @click="submitDeleteRule">Delete</button>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" @click="rm.open = false">Cancel</button>
+        <button class="btn btn-primary" :disabled="rm.busy" @click="submitRule">
+          {{ rm.busy ? 'Saving…' : 'Save Rule' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="importmap">
+  { "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js" } }
+</script>
+
+<script type="module">
+import { createApp, ref, reactive, onMounted } from 'vue'
+
+// ─── API layer ───────────────────────────────────────────────────────────────
+
+async function apiFetch(method, path, body) {
+  const opts = { method, headers: {} }
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json'
+    opts.body = JSON.stringify(body)
+  }
+  const res = await fetch(`/api${path}`, opts)
+  if (res.status === 204) return null
+  const json = await res.json()
+  if (!res.ok) throw new Error(json?.message ?? `Error ${res.status}`)
+  // ResponseEnvelopeInterceptor wraps in { data, meta }
+  return json.data !== undefined ? json.data : json
+}
+
+const api = {
+  get:    path        => apiFetch('GET',    path),
+  post:   (path, b)  => apiFetch('POST',   path, b),
+  put:    (path, b)  => apiFetch('PUT',    path, b),
+  delete: path        => apiFetch('DELETE', path),
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const fmtDate = iso =>
+  iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+
+const fmtPath = pat => pat.replace(/:([a-zA-Z][a-zA-Z0-9]*)/g, '{$1}')
+
+const baseUrl      = hash => `${location.origin}/emulate/${hash}/`
+const emulatorUrl  = (hash, pat) => `${location.origin}/emulate/${hash}${fmtPath(pat)}`
+
+const sorted = rules => [...(rules ?? [])].sort((a, b) => a.priority - b.priority)
+
+function condStr(r) {
+  if (r.conditionSource === 'none') return ''
+  const pfx = { query_param: '?', body_field: 'body.', header: 'H:', path_param: ':' }
+  const op  = { eq: '=', contains: '~', exists: '✓', not_exists: '✗', regex: '≈' }
+  const val = r.conditionValue ? ` ${r.conditionValue}` : ''
+  return `${pfx[r.conditionSource] ?? ''}${r.conditionKey} ${op[r.conditionOperator] ?? '?'}${val}`
+}
+
+const condKeyLabel = src => ({ query_param: 'Param name', body_field: 'Field path (dot)', header: 'Header name', path_param: 'Param name' }[src] ?? 'Key')
+const condKeyPlaceholder = src => ({ query_param: 'status', body_field: 'customer.type', header: 'Authorization', path_param: 'tenantId' }[src] ?? '')
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+
+createApp({
+  setup() {
+    // ── Navigation ──────────────────────────────────────────────────────────
+    const view    = ref('list')   // 'list' | 'detail'
+    const loading = ref(false)
+
+    // ── Toast ────────────────────────────────────────────────────────────────
+    const toast = reactive({ show: false, message: '', type: 'success', _t: null })
+    function notify(message, type = 'success') {
+      clearTimeout(toast._t)
+      Object.assign(toast, { show: true, message, type })
+      toast._t = setTimeout(() => { toast.show = false }, 3200)
+    }
+
+    // ── Clipboard ────────────────────────────────────────────────────────────
+    function copy(text) {
+      navigator.clipboard.writeText(text)
+        .then(() => notify('Copied to clipboard'))
+        .catch(() => notify('Failed to copy', 'error'))
+    }
+
+    // ── Projects list ────────────────────────────────────────────────────────
+    const projects  = ref([])
+    const providers = ref([])
+
+    async function loadProjects() {
+      loading.value = true
+      try { projects.value = await api.get('/projects') }
+      catch (e) { notify(e.message, 'error') }
+      finally { loading.value = false }
+    }
+
+    async function loadProviders() {
+      try { providers.value = await api.get('/providers') }
+      catch { /* silent */ }
+    }
+
+    // ── Project detail ───────────────────────────────────────────────────────
+    const currentProject = ref(null)
+    const opened = reactive(new Set())
+
+    function toggleEp(id) {
+      opened.has(id) ? opened.delete(id) : opened.add(id)
+    }
+
+    async function navigateToProject(p) {
+      view.value = 'detail'
+      loading.value = true
+      opened.clear()
+      try { currentProject.value = await api.get(`/projects/${p.id}`) }
+      catch (e) { notify(e.message, 'error'); view.value = 'list' }
+      finally { loading.value = false }
+    }
+
+    function backToList() {
+      view.value = 'list'
+      currentProject.value = null
+    }
+
+    async function confirmDeleteProject() {
+      if (!confirm(`Delete project "${currentProject.value?.name}" and all its rules?`)) return
+      try {
+        await api.delete(`/projects/${currentProject.value.id}`)
+        notify('Project deleted')
+        backToList()
+        await loadProjects()
+      } catch (e) { notify(e.message, 'error') }
+    }
+
+    // ── Create project modal ─────────────────────────────────────────────────
+    const cm = reactive({ open: false, name: '', providerId: null, busy: false, err: {} })
+
+    async function openCreateModal() {
+      Object.assign(cm, { name: '', providerId: null, busy: false, err: {} })
+      cm.open = true
+      if (!providers.value.length) await loadProviders()
+    }
+
+    async function submitCreate() {
+      cm.err = {}
+      if (!cm.name.trim())   { cm.err.name = 'Name is required'; return }
+      if (!cm.providerId)    { cm.err.providerId = 'Select a provider'; return }
+      cm.busy = true
+      try {
+        const project = await api.post('/projects', { name: cm.name.trim(), providerId: cm.providerId })
+        cm.open = false
+        notify('Project created')
+        await loadProjects()
+        navigateToProject(project)
+      } catch (e) { notify(e.message, 'error') }
+      finally { cm.busy = false }
+    }
+
+    // ── Rule modal ───────────────────────────────────────────────────────────
+    const rm = reactive({
+      open: false, mode: 'create', busy: false,
+      projectId: null, endpointId: null, ruleId: null,
+      err: {},
+      f: {
+        name: '', priority: 1,
+        conditionSource: 'none', conditionKey: '', conditionOperator: 'eq', conditionValue: '',
+        actionDelayMs: 0, actionStatus: '', actionRandom: false, responseRaw: '',
+        isEnabled: true,
+      },
+    })
+
+    function resetRuleForm(priority = 1) {
+      Object.assign(rm.f, {
+        name: '', priority,
+        conditionSource: 'none', conditionKey: '', conditionOperator: 'eq', conditionValue: '',
+        actionDelayMs: 0, actionStatus: '', actionRandom: false, responseRaw: '',
+        isEnabled: true,
+      })
+      rm.err = {}
+    }
+
+    function openAddRule(ep) {
+      const nextPriority = ep.rules?.length
+        ? Math.max(...ep.rules.map(r => r.priority)) + 1 : 1
+      rm.mode = 'create'; rm.projectId = currentProject.value.id
+      rm.endpointId = ep.id; rm.ruleId = null; rm.busy = false
+      resetRuleForm(nextPriority)
+      rm.open = true
+    }
+
+    function openEditRule(ep, r) {
+      rm.mode = 'edit'; rm.projectId = currentProject.value.id
+      rm.endpointId = ep.id; rm.ruleId = r.id; rm.busy = false; rm.err = {}
+      Object.assign(rm.f, {
+        name:            r.name ?? '',
+        priority:        r.priority,
+        conditionSource: r.conditionSource ?? 'none',
+        conditionKey:    r.conditionKey ?? '',
+        conditionOperator: r.conditionOperator ?? 'eq',
+        conditionValue:  r.conditionValue ?? '',
+        actionDelayMs:   r.actionDelayMs ?? 0,
+        actionStatus:    r.actionStatus ?? '',
+        actionRandom:    r.actionRandom ?? false,
+        responseRaw:     r.actionResponse ? JSON.stringify(r.actionResponse, null, 2) : '',
+        isEnabled:       r.isEnabled !== false,
+      })
+      rm.open = true
+    }
+
+    function buildPayload() {
+      const f = rm.f
+      let actionResponse = null
+      if (!f.actionRandom && f.responseRaw.trim()) {
+        try { actionResponse = JSON.parse(f.responseRaw) }
+        catch { rm.err.responseRaw = 'Invalid JSON'; return null }
+      }
+      return {
+        providerEndpointId: rm.endpointId,
+        name:               f.name.trim(),
+        priority:           Number(f.priority) || 1,
+        conditionSource:    f.conditionSource,
+        conditionKey:       f.conditionSource !== 'none' ? (f.conditionKey.trim() || null) : null,
+        conditionOperator:  f.conditionSource !== 'none' ? f.conditionOperator : null,
+        conditionValue:     (f.conditionSource !== 'none' && !['exists','not_exists'].includes(f.conditionOperator))
+                              ? (f.conditionValue.trim() || null) : null,
+        actionDelayMs:      Number(f.actionDelayMs) || 0,
+        actionStatus:       f.actionStatus ? Number(f.actionStatus) : null,
+        actionRandom:       f.actionRandom,
+        actionResponse,
+        isEnabled:          f.isEnabled,
+      }
+    }
+
+    async function reloadProject() {
+      currentProject.value = await api.get(`/projects/${rm.projectId}`)
+    }
+
+    async function submitRule() {
+      rm.err = {}
+      if (!rm.f.name.trim()) { rm.err.name = 'Name is required'; return }
+      if (rm.f.conditionSource !== 'none' && !rm.f.conditionKey.trim()) {
+        rm.err.conditionKey = 'Key is required'; return
+      }
+      const payload = buildPayload()
+      if (!payload) return
+      rm.busy = true
+      try {
+        if (rm.mode === 'create') {
+          await api.post(`/projects/${rm.projectId}/rules`, payload)
+          notify('Rule added')
+        } else {
+          await api.put(`/projects/${rm.projectId}/rules/${rm.ruleId}`, payload)
+          notify('Rule saved')
+        }
+        rm.open = false
+        await reloadProject()
+      } catch (e) { notify(e.message, 'error') }
+      finally { rm.busy = false }
+    }
+
+    async function submitDeleteRule() {
+      if (!confirm('Delete this rule?')) return
+      rm.busy = true
+      try {
+        await api.delete(`/projects/${rm.projectId}/rules/${rm.ruleId}`)
+        rm.open = false
+        notify('Rule deleted')
+        await reloadProject()
+      } catch (e) { notify(e.message, 'error') }
+      finally { rm.busy = false }
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    onMounted(loadProjects)
+
+    return {
+      view, loading, toast, projects, providers, currentProject, opened,
+      cm, rm,
+      openCreateModal, submitCreate,
+      navigateToProject, backToList, confirmDeleteProject, toggleEp,
+      openAddRule, openEditRule, submitRule, submitDeleteRule,
+      copy, fmtDate, baseUrl, emulatorUrl, sorted,
+      condStr, condKeyLabel, condKeyPlaceholder,
+    }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>

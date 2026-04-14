@@ -70,27 +70,27 @@
 ## Фаза 4 — Workspace BC
 **Цель:** полный CRUD проектов и правил, всё персистируется в БД.
 
-- [ ] Domain:
-  - [ ] `project.aggregate.ts`
-  - [ ] `endpoint-rule.entity.ts`
-  - [ ] `value-objects/project-hash.vo.ts` (crypto.randomBytes(6).toString('hex'))
-  - [ ] `value-objects/rule-condition.vo.ts`
-- [ ] Infrastructure:
-  - [ ] `persistence/project.repository.ts`
-  - [ ] `persistence/endpoint-rule.repository.ts`
-- [ ] Commands + Handlers:
-  - [ ] `create-project` (генерирует hash, проверяет провайдер)
-  - [ ] `delete-project` (каскад удаляет endpoint_rules)
-  - [ ] `upsert-endpoint-rule` (проверяет принадлежность endpoint провайдеру проекта)
-  - [ ] `delete-endpoint-rule`
-- [ ] Queries + Handlers:
-  - [ ] `list-projects` (с именем провайдера)
-  - [ ] `get-project-detail` (проект + все эндпоинты провайдера + правила для каждого)
-- [ ] Interface:
-  - [ ] `projects.controller.ts` (`GET /api/projects`, `POST`, `GET /:id`, `DELETE /:id`)
-  - [ ] `endpoint-rules.controller.ts` (`GET /api/projects/:id/rules`, `POST`, `PUT /:ruleId`, `DELETE /:ruleId`)
-  - [ ] DTO: `create-project.dto.ts`, `project.response.dto.ts`, `upsert-endpoint-rule.dto.ts`, `endpoint-rule.response.dto.ts`
-- [ ] `workspace.module.ts` зарегистрирован в `AppModule`
+- [x] Domain:
+  - [x] `project.entity.ts` (без `ProjectAggregate` на текущем этапе)
+  - [x] `endpoint-rule.entity.ts`
+  - [x] `value-objects/project-hash.vo.ts` (crypto.randomBytes(6).toString('hex'))
+  - [x] `value-objects/rule-condition.vo.ts`
+- [x] Infrastructure:
+  - [x] `persistence/project.repository.ts`
+  - [x] `persistence/endpoint-rule.repository.ts`
+- [x] Commands + Handlers:
+  - [x] `create-project` (генерирует hash, проверяет провайдер)
+  - [x] `delete-project` (каскад удаляет endpoint_rules)
+  - [x] `upsert-endpoint-rule` (проверяет принадлежность endpoint провайдеру проекта)
+  - [x] `delete-endpoint-rule`
+- [x] Queries + Handlers:
+  - [x] `list-projects` (с именем провайдера)
+  - [x] `get-project-detail` (проект + все эндпоинты провайдера + правила для каждого)
+- [x] Presentation:
+  - [x] `projects.controller.ts` (`GET /api/projects`, `POST`, `GET /:id`, `DELETE /:id`)
+  - [x] `endpoint-rules.controller.ts` (`GET /api/projects/:id/rules`, `POST`, `PUT /:ruleId`, `DELETE /:ruleId`)
+  - [x] DTO: `create-project.dto.ts`, `project.response.dto.ts`, `upsert-endpoint-rule.dto.ts`, `endpoint-rule.response.dto.ts`
+- [x] `workspace.module.ts` зарегистрирован в `AppModule`
 
 **Проверка:** через Postman — создать проект, добавить 3 правила с разными условиями, получить детали, удалить правило.
 
@@ -105,9 +105,9 @@
   - [ ] `response-builder.service.ts` (дефолт / override / рандомизация структуры)
 - [ ] Application:
   - [ ] `emulate.use-case.ts` (оркестрирует: hash → project → endpoints → match → rules → evaluate → build → respond)
-- [ ] Interface:
-  - [ ] `emulator.middleware.ts` (NestMiddleware на `/emulate/**`, парсит hash и provider-path из URL, обрабатывает delay через `await sleep()`)
-- [ ] `emulation.module.ts` зарегистрирован, middleware подключён в `AppModule`
+- [ ] Presentation:
+  - [ ] `emulation.controller.ts` (wildcard route на `/emulate/:hash/*`, парсит request-context и делегирует в `emulate.use-case.ts`)
+- [ ] `emulation.module.ts` зарегистрирован, controller подключён в `AppModule`
 
 **Проверка:**
 - Запрос к несуществующему hash → 404

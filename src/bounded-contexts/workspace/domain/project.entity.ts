@@ -8,6 +8,7 @@ import {
     OneToMany,
     PrimaryGeneratedColumn,
 } from 'typeorm';
+import { ProviderEntity } from '../../catalog/domain/entity/provider.entity';
 import { EndpointRuleEntity } from './endpoint-rule.entity';
 
 @Entity({ name: 'projects' })
@@ -28,12 +29,12 @@ export class ProjectEntity {
     @CreateDateColumn({ name: 'created_at', type: 'datetime' })
     createdAt!: Date;
 
-    @ManyToOne('ProviderEntity', {
+    @ManyToOne(() => ProviderEntity, {
         onDelete: 'RESTRICT',
         onUpdate: 'CASCADE',
     })
     @JoinColumn({ name: 'provider_id' })
-    provider!: unknown;
+    provider!: ProviderEntity;
 
     @OneToMany(() => EndpointRuleEntity, (endpointRule) => endpointRule.project)
     endpointRules!: EndpointRuleEntity[];

@@ -1,7 +1,7 @@
 # API Emulator — Architecture Knowledge Base
 
 > Статус: частично реализована  
-> Дата актуализации: 2026-04-13
+> Дата актуализации: 2026-04-14
 
 ---
 
@@ -82,6 +82,7 @@
 **Ответственность:** обработка `ALL /emulate/:hash/*`, выбор endpoint, применение правил, формирование ответа.
 
 **Статус:** не реализован.
+**Подход:** через `presentation/http` controller (wildcard route), без middleware-бизнес-логики.
 
 ---
 
@@ -194,9 +195,94 @@ src/
 
 ---
 
+## Эмуляция авторизации (auth endpoints)
+
+### Подход
+
+Auth-эндпоинты провайдеров (например, `POST /connect/token` у ServiceTitan) —
+это **обычные `provider_endpoint`** в seed-данных. Никаких новых таблиц и специальной
+middleware не требуется. Всё проходит через тот же `EmulatorMiddleware` → `PathMatcher` → `ResponseBuilder`.
+
+Токены на последующих запросах **не валидируются**. Эмулятор статичен — он отвечает
+на основе правил, а не внутреннего состояния.
+
+### Пометка auth-эндпоинтов
+
+Поле `is_auth_endpoint: boolean` на entity `ProviderEndpoint` — **только для UI**,
+чтобы визуально отделить auth-маршруты от бизнес-маршрутов в интерфейсе.
+
+### Динамический токен через шаблоны
+
+`ResponseBuilder` поддерживает шаблонные плейсхолдеры в `default_response` / `action_response`:
+
+| Плейсхолдер | Результат |
+|---|---|
+| `{{uuid}}` | `crypto.randomUUID()` |
+| `{{timestamp}}` | текущий ISO timestamp |
+| `{{integer}}` | случайное целое 1–9999 |
+
+Auth-эндпоинт ServiceTitan в seed:
+```json
+{
+  "method": "POST",
+  "path_pattern": "/connect/token",
+  "is_auth_endpoint": true,
+  "default_status": 200,
+  "default_response": {
+    "access_token": "{{uuid}}",
+    "expires_in": 3600,
+    "token_type": "Bearer"
+  }
+}
+```
+
+Каждый вызов `POST /emulate/a3f9c2/connect/token` возвращает свежий UUID.
+Клиент парсит токен, кладёт в заголовок — поведение идентично продакшену.
+
+### Тестирование сценария «невалидный токен»
+
+Реализуется через обычный `EndpointRule` на любом эндпоинте:
+
+```
+condition_source:   header
+condition_key:      authorization
+condition_operator: not_exists
+action_status:      401
+action_response:    { "error": "Unauthorized", "message": "Bearer token is missing" }
+priority:           1
+```
+
+### Поле `auth_config` на Provider
+
+Хранит метаданные для отображения в UI — не используется в runtime:
+
+```json
+{
+  "token_endpoint": "/connect/token",
+  "header_name": "Authorization",
+  "header_format": "Bearer {token}"
+}
+```
+
+### Yelp и провайдеры без OAuth
+
+Для провайдеров с API Key (Yelp) auth-эндпоинт не нужен —
+ключ передаётся статично в заголовке. `auth_config` описывает это для UI:
+
+```json
+{
+  "header_name": "Authorization",
+  "header_format": "Bearer {api_key}"
+}
+```
+
+---
+
 ## Ближайшие шаги
 
 1. Реализовать Workspace BC в том же CQRS-формате (`queries/<name>`, `commands/<name>`).
 2. Добавить domain VO для Workspace (`project-hash`, `rule-condition`) с инвариантами.
-3. Реализовать Emulation BC и middleware `/emulate/**`.
-4. Добавить frontend слой (`public/index.html`) после стабилизации API.
+3. Добавить `is_auth_endpoint` в entity `ProviderEndpoint` + миграция.
+4. Добавить auth-эндпоинт ServiceTitan в seed + шаблонную логику в `ResponseBuilder`.
+5. Реализовать Emulation BC через controller `/emulate/:hash/*`.
+6. Добавить frontend слой (`public/index.html`) после стабилизации API.

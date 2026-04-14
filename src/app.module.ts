@@ -1,7 +1,10 @@
+import { join } from 'path';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, type TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { CatalogModule } from './bounded-contexts/catalog/catalog.module';
+import { WorkspaceModule } from './bounded-contexts/workspace/workspace.module';
 import { buildTypeOrmOptions } from './shared/infrastructure/database/typeorm.config';
 
 @Module({
@@ -9,6 +12,10 @@ import { buildTypeOrmOptions } from './shared/infrastructure/database/typeorm.co
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: '.env',
+        }),
+        ServeStaticModule.forRoot({
+            rootPath: join(__dirname, '..', 'public'),
+            exclude: ['/api/(.*)', '/emulate/(.*)'],
         }),
         TypeOrmModule.forRootAsync({
             inject: [ConfigService],
@@ -22,6 +29,7 @@ import { buildTypeOrmOptions } from './shared/infrastructure/database/typeorm.co
                 }),
         }),
         CatalogModule,
+        WorkspaceModule,
     ],
 })
 export class AppModule {}
