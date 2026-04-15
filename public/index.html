@@ -515,7 +515,7 @@
   <!-- ════════════════════════════════════
        MODAL: RULE
   ════════════════════════════════════ -->
-  <div v-if="rm.open" class="overlay" @click.self="rm.open = false">
+  <div v-if="rm.open" class="overlay">
     <div class="modal modal-xl">
       <div class="modal-head">
         <div class="modal-title">{{ rm.mode === 'create' ? 'Add Rule' : 'Edit Rule' }}</div>
@@ -697,7 +697,7 @@ const fmtDate = iso =>
 
 const fmtPath = pat => pat.replace(/:([a-zA-Z][a-zA-Z0-9]*)/g, '{$1}')
 
-const baseUrl      = hash => `${location.origin}/emulate/${hash}/`
+const baseUrl      = hash => `${location.origin}/emulate/${hash}`
 const emulatorUrl  = (hash, pat) => `${location.origin}/emulate/${hash}${fmtPath(pat)}`
 
 const sorted = rules => [...(rules ?? [])].sort((a, b) => a.priority - b.priority)
