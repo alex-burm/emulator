@@ -12,7 +12,10 @@ import type { Request, Response } from 'express';
 export class LoggingInterceptor implements NestInterceptor {
     private readonly logger = new Logger('HTTP');
 
-    intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    intercept(
+        context: ExecutionContext,
+        next: CallHandler,
+    ): Observable<unknown> {
         const req = context.switchToHttp().getRequest<Request>();
         const res = context.switchToHttp().getResponse<Response>();
         const { method, originalUrl } = req;
@@ -21,7 +24,9 @@ export class LoggingInterceptor implements NestInterceptor {
         return next.handle().pipe(
             tap(() => {
                 const ms = Date.now() - start;
-                this.logger.log(`${method} ${originalUrl} ${res.statusCode} +${ms}ms`);
+                this.logger.log(
+                    `${method} ${originalUrl} ${res.statusCode} +${ms}ms`,
+                );
             }),
         );
     }

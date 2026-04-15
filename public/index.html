@@ -213,6 +213,7 @@
       animation: fadeUp .15s ease-out;
     }
     .modal-lg { max-width: 620px; }
+    .modal-xl { max-width: 1080px; }
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(10px) scale(.97); }
       to   { opacity: 1; transform: none; }
@@ -246,6 +247,23 @@
     .fsec { margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border); }
     .fsec:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .fsec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-3); margin-bottom: 10px; }
+    .rule-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+    .rule-col { min-width: 0; }
+    .rule-col-response {
+      border-left: 1px solid var(--border);
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .response-editor-wrap { flex: 1; min-height: 420px; display: flex; flex-direction: column; }
+    .response-editor-wrap textarea.finput { flex: 1; min-height: 420px; resize: none; }
+    @media (max-width: 960px) {
+      .modal-xl { max-width: 700px; }
+      .rule-layout { grid-template-columns: 1fr; }
+      .rule-col-response { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 18px; }
+      .response-editor-wrap { min-height: 260px; }
+      .response-editor-wrap textarea.finput { min-height: 260px; }
+    }
 
     /* ── Toggle ── */
     .trow { display: flex; align-items: center; justify-content: space-between; }
@@ -498,7 +516,7 @@
        MODAL: RULE
   ════════════════════════════════════ -->
   <div v-if="rm.open" class="overlay" @click.self="rm.open = false">
-    <div class="modal modal-lg">
+    <div class="modal modal-xl">
       <div class="modal-head">
         <div class="modal-title">{{ rm.mode === 'create' ? 'Add Rule' : 'Edit Rule' }}</div>
         <button class="btn btn-ghost btn-icon" @click="rm.open = false">✕</button>
@@ -506,113 +524,123 @@
 
       <div class="modal-body">
 
-        <!-- General -->
-        <div class="fsec">
-          <div class="fsec-title">General</div>
-          <div class="frow">
-            <div class="fgroup" style="margin-bottom:0">
-              <label class="flabel">Name</label>
-              <input v-model="rm.f.name" class="finput" :class="{ 'is-error': rm.err.name }" placeholder="e.g. Empty list for pending" />
-              <div v-if="rm.err.name" class="ferror">{{ rm.err.name }}</div>
-            </div>
-            <div class="fgroup" style="margin-bottom:0">
-              <label class="flabel">Priority</label>
-              <input v-model.number="rm.f.priority" type="number" min="1" class="finput" />
-              <div class="fhint">Lower number = checked first</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Condition -->
-        <div class="fsec">
-          <div class="fsec-title">Condition — when to trigger</div>
-          <div class="fgroup">
-            <label class="flabel">Match on</label>
-            <select v-model="rm.f.conditionSource" class="finput">
-              <option value="none">Always (catch-all, no condition)</option>
-              <option value="query_param">Query Parameter</option>
-              <option value="body_field">Body Field (dot-notation)</option>
-              <option value="header">Header</option>
-              <option value="path_param">Path Parameter</option>
-            </select>
-          </div>
-          <template v-if="rm.f.conditionSource !== 'none'">
-            <div class="frow">
-              <div class="fgroup" style="margin-bottom:0">
-                <label class="flabel">{{ condKeyLabel(rm.f.conditionSource) }}</label>
-                <input
-                  v-model="rm.f.conditionKey" class="finput" :class="{ 'is-error': rm.err.conditionKey }"
-                  :placeholder="condKeyPlaceholder(rm.f.conditionSource)"
-                />
-                <div v-if="rm.err.conditionKey" class="ferror">{{ rm.err.conditionKey }}</div>
+        <div class="rule-layout">
+          <div class="rule-col">
+            <!-- General -->
+            <div class="fsec">
+              <div class="fsec-title">General</div>
+              <div class="frow">
+                <div class="fgroup" style="margin-bottom:0">
+                  <label class="flabel">Name</label>
+                  <input v-model="rm.f.name" class="finput" :class="{ 'is-error': rm.err.name }" placeholder="e.g. Empty list for pending" />
+                  <div v-if="rm.err.name" class="ferror">{{ rm.err.name }}</div>
+                </div>
+                <div class="fgroup" style="margin-bottom:0">
+                  <label class="flabel">Priority</label>
+                  <input v-model.number="rm.f.priority" type="number" min="1" class="finput" />
+                  <div class="fhint">Lower number = checked first</div>
+                </div>
               </div>
-              <div class="fgroup" style="margin-bottom:0">
-                <label class="flabel">Operator</label>
-                <select v-model="rm.f.conditionOperator" class="finput">
-                  <option value="eq">equals</option>
-                  <option value="contains">contains</option>
-                  <option value="exists">exists (any value)</option>
-                  <option value="not_exists">not exists</option>
-                  <option value="regex">matches regex</option>
+            </div>
+
+            <!-- Condition -->
+            <div class="fsec">
+              <div class="fsec-title">Condition — when to trigger</div>
+              <div class="fgroup">
+                <label class="flabel">Match on</label>
+                <select v-model="rm.f.conditionSource" class="finput">
+                  <option value="none">Always (catch-all, no condition)</option>
+                  <option value="query_param">Query Parameter</option>
+                  <option value="body_field">Body Field (dot-notation)</option>
+                  <option value="header">Header</option>
+                  <option value="path_param">Path Parameter</option>
                 </select>
               </div>
+              <template v-if="rm.f.conditionSource !== 'none'">
+                <div class="frow">
+                  <div class="fgroup" style="margin-bottom:0">
+                    <label class="flabel">{{ condKeyLabel(rm.f.conditionSource) }}</label>
+                    <input
+                      v-model="rm.f.conditionKey" class="finput" :class="{ 'is-error': rm.err.conditionKey }"
+                      :placeholder="condKeyPlaceholder(rm.f.conditionSource)"
+                    />
+                    <div v-if="rm.err.conditionKey" class="ferror">{{ rm.err.conditionKey }}</div>
+                  </div>
+                  <div class="fgroup" style="margin-bottom:0">
+                    <label class="flabel">Operator</label>
+                    <select v-model="rm.f.conditionOperator" class="finput">
+                      <option value="eq">equals</option>
+                      <option value="contains">contains</option>
+                      <option value="exists">exists (any value)</option>
+                      <option value="not_exists">not exists</option>
+                      <option value="regex">matches regex</option>
+                    </select>
+                  </div>
+                </div>
+                <div v-if="!['exists','not_exists'].includes(rm.f.conditionOperator)" class="fgroup" style="margin-top:10px; margin-bottom:0">
+                  <label class="flabel">Value</label>
+                  <input v-model="rm.f.conditionValue" class="finput" placeholder="e.g. pending" />
+                </div>
+              </template>
             </div>
-            <div v-if="!['exists','not_exists'].includes(rm.f.conditionOperator)" class="fgroup" style="margin-top:10px; margin-bottom:0">
-              <label class="flabel">Value</label>
-              <input v-model="rm.f.conditionValue" class="finput" placeholder="e.g. pending" />
-            </div>
-          </template>
-        </div>
 
-        <!-- Action -->
-        <div class="fsec">
-          <div class="fsec-title">Action — what to return</div>
-          <div class="frow" style="margin-bottom:10px">
-            <div class="fgroup" style="margin-bottom:0">
-              <label class="flabel">Delay (ms)</label>
-              <input v-model.number="rm.f.actionDelayMs" type="number" min="0" class="finput" placeholder="0" />
-              <div class="fhint">0 = immediate</div>
-            </div>
-            <div class="fgroup" style="margin-bottom:0">
-              <label class="flabel">HTTP Status override</label>
-              <input v-model.number="rm.f.actionStatus" type="number" class="finput" placeholder="leave empty = provider default" />
-            </div>
-          </div>
-          <div class="fgroup" style="margin-bottom:8px">
-            <div class="trow">
-              <div>
-                <div class="flabel" style="margin-bottom:1px">Randomize response</div>
-                <div class="fhint">Keeps structure, randomizes values</div>
+            <!-- Action -->
+            <div class="fsec">
+              <div class="fsec-title">Action — technical fields</div>
+              <div class="frow" style="margin-bottom:10px">
+                <div class="fgroup" style="margin-bottom:0">
+                  <label class="flabel">Delay (ms)</label>
+                  <input v-model.number="rm.f.actionDelayMs" type="number" min="0" class="finput" placeholder="0" />
+                  <div class="fhint">0 = immediate</div>
+                </div>
+                <div class="fgroup" style="margin-bottom:0">
+                  <label class="flabel">HTTP Status override</label>
+                  <input v-model.number="rm.f.actionStatus" type="number" class="finput" placeholder="leave empty = provider default" />
+                </div>
               </div>
-              <label class="toggle">
-                <input type="checkbox" v-model="rm.f.actionRandom" />
-                <span class="tslider"></span>
-              </label>
+              <div class="fgroup" style="margin-bottom:0">
+                <div class="trow">
+                  <div>
+                    <div class="flabel" style="margin-bottom:1px">Randomize response</div>
+                    <div class="fhint">Keeps structure, randomizes values</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" v-model="rm.f.actionRandom" />
+                    <span class="tslider"></span>
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="fgroup" style="margin-bottom:0">
-            <label class="flabel">Response Body (JSON)</label>
-            <textarea
-              v-model="rm.f.responseRaw" class="finput" :class="{ 'is-error': rm.err.responseRaw }"
-              :disabled="rm.f.actionRandom"
-              placeholder='Leave empty to use provider default&#10;&#10;{"data": [], "total": 0}'
-            ></textarea>
-            <div v-if="rm.err.responseRaw" class="ferror">{{ rm.err.responseRaw }}</div>
-            <div v-else-if="rm.f.actionRandom" class="fhint">Disabled — random mode is active</div>
-          </div>
-        </div>
 
-        <!-- Enabled -->
-        <div class="fsec">
-          <div class="trow">
-            <div>
-              <div class="flabel" style="margin-bottom:1px">Rule Enabled</div>
-              <div class="fhint">Disabled rules are skipped</div>
+            <!-- Enabled -->
+            <div class="fsec">
+              <div class="trow">
+                <div>
+                  <div class="flabel" style="margin-bottom:1px">Rule Enabled</div>
+                  <div class="fhint">Disabled rules are skipped</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" v-model="rm.f.isEnabled" />
+                  <span class="tslider"></span>
+                </label>
+              </div>
             </div>
-            <label class="toggle">
-              <input type="checkbox" v-model="rm.f.isEnabled" />
-              <span class="tslider"></span>
-            </label>
+          </div>
+
+          <div class="rule-col rule-col-response">
+            <div class="fsec" style="margin-bottom:0; padding-bottom:0">
+              <div class="fsec-title">Response Body</div>
+              <div class="response-editor-wrap">
+                <textarea
+                  v-model="rm.f.responseRaw"
+                  class="finput"
+                  :disabled="rm.f.actionRandom"
+                  placeholder='Any response body is allowed.&#10;You can put JSON, XML, plain text, HTML or leave it empty to use provider default.'
+                ></textarea>
+              </div>
+              <div v-if="rm.f.actionRandom" class="fhint">Disabled — random mode is active</div>
+              <div v-else class="fhint">Empty value means fallback to provider default response</div>
+            </div>
           </div>
         </div>
 
@@ -854,7 +882,11 @@ createApp({
         actionDelayMs:   r.actionDelayMs ?? 0,
         actionStatus:    r.actionStatus ?? '',
         actionRandom:    r.actionRandom ?? false,
-        responseRaw:     r.actionResponse ? JSON.stringify(r.actionResponse, null, 2) : '',
+        responseRaw:     r.actionResponse === null || r.actionResponse === undefined
+                           ? ''
+                           : typeof r.actionResponse === 'string'
+                             ? r.actionResponse
+                             : JSON.stringify(r.actionResponse, null, 2),
         isEnabled:       r.isEnabled !== false,
       })
       rm.open = true
@@ -863,9 +895,15 @@ createApp({
     function buildPayload() {
       const f = rm.f
       let actionResponse = null
-      if (!f.actionRandom && f.responseRaw.trim()) {
-        try { actionResponse = JSON.parse(f.responseRaw) }
-        catch { rm.err.responseRaw = 'Invalid JSON'; return null }
+      if (!f.actionRandom) {
+        const raw = f.responseRaw
+        if (raw.trim()) {
+          try {
+            actionResponse = JSON.parse(raw)
+          } catch {
+            actionResponse = raw
+          }
+        }
       }
       return {
         providerEndpointId: rm.endpointId,

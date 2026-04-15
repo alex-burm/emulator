@@ -21,7 +21,10 @@ async function bootstrap() {
         }),
     );
     app.useGlobalFilters(new GlobalExceptionFilter());
-    app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseEnvelopeInterceptor());
+    app.useGlobalInterceptors(
+        new LoggingInterceptor(),
+        new ResponseEnvelopeInterceptor(),
+    );
 
     const port = Number(process.env.APP_PORT ?? 3000);
     await app.listen(port, '0.0.0.0');
